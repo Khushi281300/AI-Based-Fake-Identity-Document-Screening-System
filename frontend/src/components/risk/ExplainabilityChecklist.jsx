@@ -1,116 +1,96 @@
 import React from 'react';
-import { 
-  CheckCircle2, 
-  XCircle, 
-  AlertTriangle, 
-  HelpCircle,
-  Sliders,
-  Scale
-} from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
+
+const CHECKS = [
+  { key: 'document_quality',       name: 'Photo Quality',        weight: '10%', what: 'Checks if the document photo is clear, sharp, and easy to read.' },
+  { key: 'mrz_integrity',          name: 'Security Codes',       weight: '20%', what: 'Confirms that the bottom line numbers mathematically match the passport data.' },
+  { key: 'forensic_integrity',     name: 'Tampering Check',      weight: '25%', what: 'Scans for cut-and-paste edits, altered text, or cloned elements.' },
+  { key: 'biometric_verification', name: 'Face Match',           weight: '25%', what: 'Compares the passport portrait with the traveler’s live camera shot.' },
+  { key: 'database_watchlist',     name: 'Alert List Check',     weight: '20%', what: 'Checks against lost, stolen, and travel-ban databases.' },
+];
 
 export default function ExplainabilityChecklist({ factorBreakdown }) {
   const factors = factorBreakdown || {
-    document_quality: { score: 92.0, weight: "10%", status: "PASS" },
-    mrz_integrity: { score: 100.0, weight: "20%", status: "PASS" },
-    forensic_integrity: { score: 95.0, weight: "25%", status: "PASS" },
-    biometric_verification: { score: 92.0, weight: "25%", status: "PASS" },
-    database_watchlist: { score: 100.0, weight: "20%", status: "PASS" }
+    document_quality:       { score: 92, status: 'PASS' },
+    mrz_integrity:          { score: 100, status: 'PASS' },
+    forensic_integrity:     { score: 95, status: 'PASS' },
+    biometric_verification: { score: 92, status: 'PASS' },
+    database_watchlist:     { score: 100, status: 'PASS' },
   };
 
-  const factorItems = [
-    {
-      id: 'quality',
-      title: '1. Document Physical & Optical Quality',
-      key: 'document_quality',
-      weight: '10%',
-      desc: 'Evaluates Laplacian sharpness, edge blur, and laminate specular reflections.'
-    },
-    {
-      id: 'mrz',
-      title: '2. ICAO 9303 MRZ & Check-Digit Integrity',
-      key: 'mrz_integrity',
-      weight: '20%',
-      desc: 'Mathematical verification of 7-3-1 weight check sums across doc#, DOB, and expiry.'
-    },
-    {
-      id: 'forensics',
-      title: '3. Multi-Layer Forensics & Tamper Analysis',
-      key: 'forensic_integrity',
-      weight: '25%',
-      desc: 'Fused scores across ELA recompression, SRM noise, copy-move, and 2D FFT Moire.'
-    },
-    {
-      id: 'biometrics',
-      title: '4. Biometric Face Match & Active Liveness',
-      key: 'biometric_verification',
-      weight: '25%',
-      desc: 'ArcFace 512-D cosine similarity and ISO 30107-3 anti-spoof challenge response.'
-    },
-    {
-      id: 'database',
-      title: '5. Watchlist & Identity Graph Cross-Check',
-      key: 'database_watchlist',
-      weight: '20%',
-      desc: 'Real-time blacklist matching and cross-identity vector duplicate detection.'
-    }
-  ];
-
   return (
-    <div className="glass-panel p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Scale className="w-5 h-5 text-cyan-400" />
-          <span className="text-sm font-semibold text-slate-200">
-            Explainable Decision Tree & Factor Weights
-          </span>
-        </div>
-        <span className="text-xs font-mono text-slate-400">
-          Weighted Multi-Signal Model
-        </span>
-      </div>
+    <div className="card" style={{ padding: 22, background: '#FFFFFF' }}>
+      <p className="section-label">Inspection Breakdown</p>
+      <h2 style={{
+        fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, cursive, serif',
+        fontStyle: 'italic',
+        fontSize: 22,
+        color: '#2E1B24',
+        marginBottom: 4,
+      }}>
+        What Was Checked
+      </h2>
+      <p style={{ fontSize: 12.5, color: '#846271', marginBottom: 18 }}>
+        Here is the breakdown of the 5 key safety factors evaluated by the AI.
+      </p>
 
-      <div className="space-y-3">
-        {factorItems.map((item) => {
-          const factorData = factors[item.key] || { score: 90, status: "PASS" };
-          const isPass = factorData.status === "PASS";
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {CHECKS.map(item => {
+          const factor = factors[item.key] || { score: 90, status: 'PASS' };
+          const ok = factor.status === 'PASS' || factor.score >= 70;
           return (
             <div
-              key={item.id}
-              className={`p-3.5 rounded-xl border flex items-center justify-between transition-all ${
-                isPass
-                  ? 'bg-slate-900/50 border-slate-800'
-                  : 'bg-rose-950/20 border-rose-800/60'
-              }`}
+              key={item.key}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                padding: '12px 16px',
+                borderRadius: 16,
+                background: ok ? '#FFFDFD' : '#FEF1F3',
+                border: `1.5px solid ${ok ? '#F7DFE6' : '#F8BAC7'}`,
+                transition: 'all 0.15s ease',
+              }}
             >
-              <div className="space-y-1 max-w-xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-200">{item.title}</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400">
-                    Weight: {item.weight}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-normal">{item.desc}</p>
+              <div style={{ flexShrink: 0 }}>
+                {ok ? (
+                  <CheckCircle2 size={22} color="#4A8C5C" />
+                ) : (
+                  <XCircle size={22} color="#D14966" />
+                )}
               </div>
 
-              <div className="flex items-center gap-4 text-right">
-                <div>
-                  <span className="text-xs font-mono font-bold text-slate-100 block">
-                    {factorData.score} / 100
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: '#2E1B24' }}>
+                    {item.name}
                   </span>
-                  <span
-                    className={`text-[10px] font-mono font-bold ${
-                      isPass ? 'text-emerald-400' : 'text-rose-400'
-                    }`}
-                  >
-                    {isPass ? 'PASSED' : 'FLAGGED'}
+                  <span style={{ fontSize: 11, color: '#B99DAA', fontWeight: 500 }}>
+                    ({item.weight} weight)
                   </span>
                 </div>
+                <p style={{ fontSize: 12, color: '#846271', marginTop: 2, lineHeight: 1.35 }}>
+                  {item.what}
+                </p>
+              </div>
 
-                {isPass ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-rose-400 shrink-0" />
-                )}
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{
+                  fontSize: 18,
+                  fontWeight: 800,
+                  fontFamily: '"JetBrains Mono", monospace',
+                  color: ok ? '#4A8C5C' : '#D14966',
+                }}>
+                  {factor.score}
+                </div>
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: ok ? '#4A8C5C' : '#D14966',
+                  textTransform: 'uppercase',
+                }}>
+                  {ok ? 'Passed' : 'Failed'}
+                </div>
               </div>
             </div>
           );

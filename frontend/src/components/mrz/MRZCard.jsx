@@ -1,163 +1,103 @@
 import React from 'react';
-import { 
-  Binary, 
-  CheckCircle2, 
-  XCircle, 
-  AlertTriangle, 
-  Check, 
-  ShieldCheck,
-  FileSpreadsheet
-} from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 
-export default function MRZCard({ documentFields, reconciliation }) {
+export default function MRZCard({ documentFields }) {
   const mrz = documentFields || {};
   const checkDigits = mrz.check_digits || {};
   const rawMRZ = mrz.raw_mrz || [
-    "P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<",
-    "L898902C36UTO7408122F3004159ZE184226B<<<<<10"
+    'P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<',
+    'L898902C36UTO7408122F3004159ZE184226B<<<<<10',
   ];
+  const allValid = mrz.all_check_digits_valid !== false;
 
-  const checksList = [
-    {
-      id: 'doc_num',
-      name: 'Document Number Checksum',
-      key: 'document_number',
-      item: checkDigits.document_number || { expected: '6', calculated: '6', valid: true },
-      desc: 'Validates passport sequence using 7-3-1 weight sum modulo 10.'
-    },
-    {
-      id: 'dob',
-      name: 'Date of Birth Checksum',
-      key: 'date_of_birth',
-      item: checkDigits.date_of_birth || { expected: '2', calculated: '2', valid: true },
-      desc: 'Validates holder birth date against printed optical records.'
-    },
-    {
-      id: 'expiry',
-      name: 'Expiry Date Checksum',
-      key: 'expiry_date',
-      item: checkDigits.expiry_date || { expected: '9', calculated: '9', valid: true },
-      desc: 'Detects illegal extension or tampered expiration digits.'
-    },
-    {
-      id: 'composite',
-      name: 'Overall Composite Checksum',
-      key: 'composite',
-      item: checkDigits.composite || { expected: '0', calculated: '0', valid: true },
-      desc: 'Mathematically verifies all data fields across the entire machine readable zone.'
-    }
+  const checks = [
+    { id: 'doc', name: 'Passport Number', item: checkDigits.document_number || { expected: '6', calculated: '6', valid: true }, what: 'Verifies the document ID number is genuine.' },
+    { id: 'dob', name: 'Date of Birth',   item: checkDigits.date_of_birth    || { expected: '2', calculated: '2', valid: true }, what: 'Verifies birth date checksum digits.' },
+    { id: 'exp', name: 'Expiration Date', item: checkDigits.expiry_date      || { expected: '9', calculated: '9', valid: true }, what: 'Detects if the expiration was altered.' },
+    { id: 'com', name: 'Total Checksum',  item: checkDigits.composite        || { expected: '0', calculated: '0', valid: true }, what: 'Full security check over all combined fields.' },
   ];
 
   return (
-    <div className="space-y-4">
-      {/* MRZ Character Grid Box */}
-      <div className="glass-panel p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Binary className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm font-semibold text-slate-200">ICAO Doc 9303 MRZ Optical Grid</span>
-            <span className="text-xs font-mono text-cyan-400">({mrz.format || "TD3"} Standard)</span>
-          </div>
-
-          {mrz.all_check_digits_valid ? (
-            <span className="px-2.5 py-1 rounded-md bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-xs font-mono font-bold flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              CHECKSUMS VALID
-            </span>
-          ) : (
-            <span className="px-2.5 py-1 rounded-md bg-rose-950/80 text-rose-300 border border-rose-800 text-xs font-mono font-bold flex items-center gap-1.5 animate-pulse">
-              <XCircle className="w-3.5 h-3.5 text-rose-400" />
-              CHECKSUM CORRUPTED / TAMPERED
-            </span>
-          )}
-        </div>
-
-        {/* Character Stream Display */}
-        <div className="bg-black/90 p-4 rounded-xl border border-cyan-900/40 font-mono text-base tracking-widest text-cyan-300 shadow-inner overflow-x-auto space-y-2">
-          {rawMRZ.map((line, idx) => (
-            <div key={idx} className="flex items-center gap-3">
-              <span className="text-slate-600 text-xs select-none">L{idx + 1}</span>
-              <span className="font-bold text-sky-300 hover:text-white transition cursor-text">
-                {line}
-              </span>
-            </div>
-          ))}
-        </div>
+    <div className="card" style={{ padding: 22, background: '#FFFFFF' }}>
+      <p className="section-label">Security Line Verification</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h2 style={{
+          fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, cursive, serif',
+          fontStyle: 'italic',
+          fontSize: 22,
+          color: '#2E1B24',
+        }}>
+          Passport Bottom Line Check
+        </h2>
+        {allValid ? (
+          <span className="pill pill-green">All digits match</span>
+        ) : (
+          <span className="pill pill-red">Code mismatch detected</span>
+        )}
       </div>
 
-      {/* 4 Check-Digit Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {checksList.map((check) => {
-          const isValid = check.item.valid;
+      <p style={{ fontSize: 12.5, color: '#846271', marginBottom: 14 }}>
+        The bottom lines on passports contain security checksums. If someone edits the text on the document, these numbers will not match.
+      </p>
+
+      {/* Raw MRZ Box in a stylish warm dark container */}
+      <div style={{
+        background: '#23171D',
+        borderRadius: 14,
+        padding: '12px 16px',
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: 12,
+        color: '#F9CBD9',
+        letterSpacing: '0.06em',
+        lineHeight: 1.6,
+        marginBottom: 16,
+        overflowX: 'auto',
+        border: '1px solid #3B232E',
+      }}>
+        {rawMRZ.map((line, idx) => (
+          <div key={idx}>{line}</div>
+        ))}
+      </div>
+
+      {/* 4 Checks Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {checks.map(check => {
+          const ok = check.item.valid !== false;
           return (
             <div
               key={check.id}
-              className={`glass-panel p-4 flex flex-col justify-between border ${
-                isValid
-                  ? 'border-emerald-500/30 bg-emerald-950/10'
-                  : 'border-rose-500/50 bg-rose-950/20 shadow-lg shadow-rose-500/10'
-              }`}
+              style={{
+                padding: '12px 14px',
+                borderRadius: 14,
+                background: ok ? '#FFFDFD' : '#FEF1F3',
+                border: `1.5px solid ${ok ? '#F7DFE6' : '#F8BAC7'}`,
+              }}
             >
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-slate-300">{check.name}</span>
-                  {isValid ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-rose-400 animate-bounce" />
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1 leading-snug">{check.desc}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#2E1B24' }}>
+                  {check.name}
+                </span>
+                {ok ? (
+                  <CheckCircle2 size={16} color="#4A8C5C" />
+                ) : (
+                  <XCircle size={16} color="#D14966" />
+                )}
               </div>
-
-              <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono">
-                <div>
-                  <span className="text-slate-500 text-[10px] block">EXPECTED</span>
-                  <span className="font-bold text-slate-200">{check.item.expected}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 text-[10px] block">CALCULATED</span>
-                  <span className={`font-bold ${isValid ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {check.item.calculated}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-slate-500 text-[10px] block">STATUS</span>
-                  <span className={`font-bold ${isValid ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {isValid ? 'VALID' : 'FAIL'}
-                  </span>
-                </div>
+              <p style={{ fontSize: 11, color: '#846271', lineHeight: 1.3 }}>
+                {check.what}
+              </p>
+              <div style={{
+                marginTop: 6,
+                fontSize: 11,
+                fontFamily: '"JetBrains Mono", monospace',
+                color: ok ? '#4A8C5C' : '#D14966',
+                fontWeight: 600,
+              }}>
+                Expected: {check.item.expected} • Got: {check.item.calculated}
               </div>
             </div>
           );
         })}
-      </div>
-
-      {/* Decoded Structured Document Fields */}
-      <div className="glass-panel p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
-          <span className="text-sm font-semibold text-slate-200">Decoded Structured Metadata</span>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-            <span className="text-slate-400 text-[11px] block">FULL NAME</span>
-            <span className="font-bold text-slate-100 mt-0.5 block">{mrz.full_name || "ERIKSSON ANNA MARIA"}</span>
-          </div>
-          <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-            <span className="text-slate-400 text-[11px] block">DOCUMENT NUMBER</span>
-            <span className="font-mono font-bold text-cyan-300 mt-0.5 block">{mrz.document_number || "L898902C3"}</span>
-          </div>
-          <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-            <span className="text-slate-400 text-[11px] block">DATE OF BIRTH</span>
-            <span className="font-mono font-bold text-slate-100 mt-0.5 block">{mrz.date_of_birth || "1974-08-12"}</span>
-          </div>
-          <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-            <span className="text-slate-400 text-[11px] block">EXPIRY DATE</span>
-            <span className="font-mono font-bold text-slate-100 mt-0.5 block">{mrz.expiry_date || "2030-04-15"}</span>
-          </div>
-        </div>
       </div>
     </div>
   );

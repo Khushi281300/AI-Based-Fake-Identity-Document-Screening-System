@@ -4,10 +4,7 @@ import {
   TrendingUp, 
   ShieldAlert, 
   Clock, 
-  Users, 
-  CheckCircle2, 
-  AlertTriangle,
-  Flame
+  Users 
 } from 'lucide-react';
 import { getCheckpointAnalytics } from '../../api/client';
 
@@ -21,11 +18,11 @@ export default function CheckpointAnalytics() {
     average_inspection_time_sec: 1.4,
     active_officers_count: 6,
     attack_vectors: [
-      { name: "MRZ Checksum Fraud", count: 14, percentage: 38.0, color: "#f43f5e" },
-      { name: "Photo & Face Splicing (ELA)", count: 11, percentage: 30.0, color: "#ec4899" },
-      { name: "Screen Replay Recapture (Moire)", count: 6, percentage: 16.0, color: "#eab308" },
-      { name: "Biometric Impersonation", count: 4, percentage: 11.0, color: "#06b6d4" },
-      { name: "Interpol Watchlist Hit", count: 2, percentage: 5.0, color: "#a855f7" }
+      { name: "Passport Number / Checksum Alteration", count: 14, percentage: 38.0, color: "#D14966" },
+      { name: "Digital Photo Editing (Photoshop)", count: 11, percentage: 30.0, color: "#D4789A" },
+      { name: "Screen Photo / Replay Attack", count: 6, percentage: 16.0, color: "#B66D26" },
+      { name: "Wrong Person / Face Mismatch", count: 4, percentage: 11.0, color: "#B25779" },
+      { name: "Alert List Matches", count: 2, percentage: 5.0, color: "#846271" }
     ],
     hourly_throughput: [
       { hour: "08:00", scans: 18, flagged: 1 },
@@ -50,125 +47,132 @@ export default function CheckpointAnalytics() {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Title */}
+      <div>
+        <h1 style={{
+          fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, cursive, serif',
+          fontStyle: 'italic',
+          fontSize: 28,
+          color: '#2E1B24',
+        }}>
+          Daily Checkpoint Summary
+        </h1>
+        <p style={{ fontSize: 13, color: '#846271', marginTop: 2 }}>
+          Today's inspection volume, detection rates, and common forgery patterns.
+        </p>
+      </div>
+
       {/* 4 Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-panel p-4 flex items-center justify-between">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+        <div className="card" style={{ padding: 18, background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <span className="text-[11px] font-mono text-slate-400 block uppercase">Total Screenings Today</span>
-            <span className="text-2xl font-black font-mono text-slate-100 mt-1 block">
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#846271', textTransform: 'uppercase' }}>Documents Checked Today</span>
+            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: '"JetBrains Mono", monospace', color: '#2E1B24', marginTop: 4 }}>
               {metrics.total_scans_today}
-            </span>
-            <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 mt-1">
-              <TrendingUp className="w-3 h-3" /> +14% vs yesterday
-            </span>
+            </div>
+            <div style={{ fontSize: 11, color: '#4A8C5C', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+              <TrendingUp size={12} /> +14% vs yesterday
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-cyan-950/60 border border-cyan-800/60 flex items-center justify-center text-cyan-400">
-            <BarChart3 className="w-6 h-6" />
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FDEEF3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <BarChart3 size={20} color="#D4789A" />
           </div>
         </div>
 
-        <div className="glass-panel p-4 flex items-center justify-between border-rose-500/20">
+        <div className="card" style={{ padding: 18, background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <span className="text-[11px] font-mono text-slate-400 block uppercase">Fraud Detection Rate</span>
-            <span className="text-2xl font-black font-mono text-rose-400 mt-1 block">
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#846271', textTransform: 'uppercase' }}>Fraud Rate</span>
+            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: '"JetBrains Mono", monospace', color: '#D14966', marginTop: 4 }}>
               {metrics.fraud_rate_percentage}%
-            </span>
-            <span className="text-[10px] text-slate-400 font-mono mt-1 block">
-              {metrics.rejected_count} intercepted passports
-            </span>
+            </div>
+            <div style={{ fontSize: 11, color: '#846271', marginTop: 4 }}>
+              {metrics.rejected_count} fraudulent IDs intercepted
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-rose-950/60 border border-rose-800/60 flex items-center justify-center text-rose-400">
-            <ShieldAlert className="w-6 h-6" />
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FEF1F3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ShieldAlert size={20} color="#D14966" />
           </div>
         </div>
 
-        <div className="glass-panel p-4 flex items-center justify-between">
+        <div className="card" style={{ padding: 18, background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <span className="text-[11px] font-mono text-slate-400 block uppercase">Avg AI Processing Latency</span>
-            <span className="text-2xl font-black font-mono text-cyan-300 mt-1 block">
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#846271', textTransform: 'uppercase' }}>Avg AI Speed</span>
+            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: '"JetBrains Mono", monospace', color: '#2E1B24', marginTop: 4 }}>
               {metrics.average_inspection_time_sec}s
-            </span>
-            <span className="text-[10px] text-slate-400 font-mono mt-1 block">
-              Real-time Edge Inference
-            </span>
+            </div>
+            <div style={{ fontSize: 11, color: '#846271', marginTop: 4 }}>
+              Instant verification
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-cyan-400">
-            <Clock className="w-6 h-6" />
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FFF4EE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Clock size={20} color="#B66D26" />
           </div>
         </div>
 
-        <div className="glass-panel p-4 flex items-center justify-between">
+        <div className="card" style={{ padding: 18, background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <span className="text-[11px] font-mono text-slate-400 block uppercase">Active Checkpoint Lanes</span>
-            <span className="text-2xl font-black font-mono text-indigo-300 mt-1 block">
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#846271', textTransform: 'uppercase' }}>Active Checkpoints</span>
+            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: '"JetBrains Mono", monospace', color: '#2E1B24', marginTop: 4 }}>
               {metrics.active_officers_count} Lanes
-            </span>
-            <span className="text-[10px] text-emerald-400 font-mono mt-1 block">
-              100% Operational Grid
-            </span>
+            </div>
+            <div style={{ fontSize: 11, color: '#4A8C5C', marginTop: 4 }}>
+              All gates online
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-indigo-950/60 border border-indigo-800/60 flex items-center justify-center text-indigo-400">
-            <Users className="w-6 h-6" />
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: '#F0F8F3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Users size={20} color="#4A8C5C" />
           </div>
         </div>
       </div>
 
-      {/* Attack Vectors & Hourly Throughput */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Attack Vectors Breakdown */}
-        <div className="lg:col-span-6 glass-panel p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-200">
-              Primary Fraud Vectors Intercepted
-            </span>
-            <span className="text-xs font-mono text-rose-400 font-bold">Top Threat Vectors</span>
-          </div>
-
-          <div className="space-y-3 pt-2">
+      {/* Breakdown Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* Threat breakdown */}
+        <div className="card" style={{ padding: 20, background: '#FFFFFF' }}>
+          <p className="section-label">Most Common Alteration Types</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
             {metrics.attack_vectors.map((vec, idx) => (
-              <div key={idx} className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-300">{vec.name}</span>
-                  <span className="font-mono font-bold text-slate-200">
+              <div key={idx}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
+                  <span style={{ fontWeight: 600, color: '#573B48' }}>{vec.name}</span>
+                  <span style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 700, color: '#2E1B24' }}>
                     {vec.count} cases ({vec.percentage}%)
                   </span>
                 </div>
-                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${vec.percentage}%`, backgroundColor: vec.color }}
-                  />
+                <div className="progress">
+                  <div className="progress-fill" style={{ width: `${vec.percentage}%`, background: vec.color }} />
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Hourly Throughput Bar Chart */}
-        <div className="lg:col-span-6 glass-panel p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-200">
-              Hourly Checkpoint Volume
-            </span>
-            <span className="text-xs font-mono text-cyan-400">Throughput Telemetry</span>
-          </div>
-
-          <div className="h-52 flex items-end justify-between gap-3 pt-6 px-2">
-            {metrics.hourly_throughput.map((item, idx) => (
-              <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                <span className="text-[10px] font-mono text-slate-400">{item.scans}</span>
-                <div
-                  className="w-full bg-gradient-to-t from-cyan-600 to-blue-400 rounded-t-lg transition-all duration-300 relative group"
-                  style={{ height: `${(item.scans / 45) * 100}%` }}
-                >
-                  {item.flagged > 0 && (
-                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                  )}
+        {/* Hourly activity */}
+        <div className="card" style={{ padding: 20, background: '#FFFFFF' }}>
+          <p className="section-label">Today's Hourly Activity</p>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: 160, paddingTop: 20 }}>
+            {metrics.hourly_throughput.map((item, idx) => {
+              const maxScans = 50;
+              const heightPct = Math.round((item.scans / maxScans) * 100);
+              return (
+                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', color: '#846271' }}>
+                    {item.scans}
+                  </div>
+                  <div style={{
+                    width: 24,
+                    height: `${heightPct}%`,
+                    minHeight: 12,
+                    borderRadius: '8px 8px 4px 4px',
+                    background: 'linear-gradient(180deg, #D4789A, #F3D0DC)',
+                  }} />
+                  <div style={{ fontSize: 10.5, color: '#B99DAA', fontFamily: '"JetBrains Mono", monospace' }}>
+                    {item.hour}
+                  </div>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400">{item.hour}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

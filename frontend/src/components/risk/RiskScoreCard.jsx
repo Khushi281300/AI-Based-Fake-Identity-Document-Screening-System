@@ -1,128 +1,145 @@
-import React, { useState } from 'react';
-import { 
-  ShieldCheck, 
-  AlertTriangle, 
-  XOctagon, 
-  CheckCircle2, 
-  HelpCircle,
-  FileCheck,
-  Award
-} from 'lucide-react';
+import React from 'react';
+import { CheckCircle2, XCircle, AlertTriangle, FileText } from 'lucide-react';
 
-export default function RiskScoreCard({ riskEvaluation, onGenerateCertificate }) {
-  const evalData = riskEvaluation || {
-    outcome: "VERIFIED",
-    overall_risk_score: 95.5,
-    confidence_score: 98.2,
-    recommendation: "DOCUMENT AUTHENTICATED. Proceed with entry authorization.",
+export default function RiskScoreCard({ riskEvaluation, onViewAudit }) {
+  const data = riskEvaluation || {
+    outcome: 'VERIFIED',
+    overall_risk_score: 96,
+    recommendation: 'All security checks passed. The document is authentic.',
     critical_failures: [],
-    warning_flags: []
+    warning_flags: [],
   };
 
-  const outcome = evalData.outcome || "VERIFIED";
-  const score = evalData.overall_risk_score || 95;
+  const isPass   = data.outcome === 'VERIFIED';
+  const isReview = data.outcome === 'MANUAL_REVIEW';
 
-  const isVerified = outcome === "VERIFIED";
-  const isReview = outcome === "MANUAL_REVIEW";
-  const isRejected = outcome === "REJECTED";
+  const theme = isPass ? {
+    bg: '#F0F8F3', border: '#BCDCC7', iconBg: '#4A8C5C',
+    icon: <CheckCircle2 size={26} color="#fff" />,
+    title: 'Document Verified', titleColor: '#2B5A37',
+    badgeBg: '#FFFFFF', badgeColor: '#3B734A',
+  } : isReview ? {
+    bg: '#FFF6EC', border: '#F8D6B0', iconBg: '#B66D26',
+    icon: <AlertTriangle size={26} color="#fff" />,
+    title: 'Needs Manual Review', titleColor: '#8C4D14',
+    badgeBg: '#FFFFFF', badgeColor: '#8C4D14',
+  } : {
+    bg: '#FEF1F3', border: '#F8BAC7', iconBg: '#D14966',
+    icon: <XCircle size={26} color="#fff" />,
+    title: 'Document Rejected', titleColor: '#96243C',
+    badgeBg: '#FFFFFF', badgeColor: '#96243C',
+  };
 
   return (
-    <div className="space-y-4">
-      {/* Hero Decision Outcome Banner */}
-      <div
-        className={`glass-panel p-6 border-2 transition-all duration-300 ${
-          isVerified
-            ? 'border-emerald-500/50 bg-emerald-950/20 shadow-emerald-500/10'
-            : isReview
-            ? 'border-amber-500/50 bg-amber-950/20 shadow-amber-500/10'
-            : 'border-rose-500/60 bg-rose-950/30 shadow-rose-500/20'
-        }`}
-      >
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div
-              className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 border-2 shadow-2xl ${
-                isVerified
-                  ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300'
-                  : isReview
-                  ? 'bg-amber-500/20 border-amber-400 text-amber-300'
-                  : 'bg-rose-500/20 border-rose-400 text-rose-300 animate-pulse'
-              }`}
-            >
-              {isVerified ? (
-                <ShieldCheck className="w-9 h-9" />
-              ) : isReview ? (
-                <AlertTriangle className="w-9 h-9" />
-              ) : (
-                <XOctagon className="w-9 h-9" />
-              )}
-            </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-2xl font-black tracking-tight text-white font-mono">
-                  {outcome === "VERIFIED" && "VERIFIED — ACCESS GRANTED"}
-                  {outcome === "MANUAL_REVIEW" && "MANUAL REVIEW REQUIRED"}
-                  {outcome === "REJECTED" && "REJECTED — FRAUD DETECTED"}
-                </h2>
-                <span
-                  className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded-full uppercase border ${
-                    isVerified
-                      ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
-                      : isReview
-                      ? 'bg-amber-950 text-amber-300 border-amber-700'
-                      : 'bg-rose-950 text-rose-300 border-rose-700'
-                  }`}
-                >
-                  Score: {score} / 100
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                {evalData.recommendation}
-              </p>
-            </div>
+      {/* Main Verdict Banner */}
+      <div style={{
+        background: theme.bg,
+        border: `1.5px solid ${theme.border}`,
+        borderRadius: 20,
+        padding: '20px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 18,
+        boxShadow: '0 2px 10px rgba(212,120,154,0.05)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{
+            width: 50, height: 50, borderRadius: 16,
+            background: theme.iconBg,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+            boxShadow: `0 4px 14px ${theme.iconBg}40`,
+          }}>
+            {theme.icon}
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onGenerateCertificate}
-              className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-xs flex items-center gap-2 transition"
-            >
-              <FileCheck className="w-4 h-4 text-cyan-400" />
-              Generate Verifiable Receipt
-            </button>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <h2 style={{
+                fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, cursive, serif',
+                fontStyle: 'italic',
+                fontSize: 24,
+                color: theme.titleColor,
+                fontWeight: 700,
+                lineHeight: 1.15,
+              }}>
+                {theme.title}
+              </h2>
+              <span style={{
+                background: theme.badgeBg,
+                border: `1px solid ${theme.border}`,
+                borderRadius: 999,
+                padding: '2px 10px',
+                fontSize: 12,
+                fontWeight: 700,
+                color: theme.badgeColor,
+              }}>
+                Trust Score: {data.overall_risk_score} / 100
+              </span>
+            </div>
+            <p style={{ fontSize: 13, color: '#573B48', marginTop: 4, lineHeight: 1.4 }}>
+              {data.recommendation}
+            </p>
           </div>
         </div>
+
+        <button
+          onClick={onViewAudit}
+          className="btn btn-secondary"
+          style={{ flexShrink: 0, fontSize: 12, borderRadius: 12 }}
+        >
+          <FileText size={14} color="#D4789A" />
+          <span>View Report</span>
+        </button>
       </div>
 
-      {/* Critical Failures / Warnings if any */}
-      {evalData.critical_failures && evalData.critical_failures.length > 0 && (
-        <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-800/80 text-rose-200 text-xs space-y-1.5">
-          <div className="flex items-center gap-2 font-bold text-rose-300">
-            <XOctagon className="w-4 h-4 text-rose-400" />
-            <span>Critical Security Violations (Hard-Stop Triggers):</span>
+      {/* Critical Issues Box */}
+      {data.critical_failures?.length > 0 && (
+        <div style={{
+          background: '#FEF1F3',
+          border: '1.5px solid #F8BAC7',
+          borderRadius: 16,
+          padding: '14px 18px',
+        }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#96243C', marginBottom: 8 }}>
+            Reason for Rejection:
           </div>
-          <ul className="list-disc list-inside space-y-1 pl-2 text-rose-200/90 font-mono">
-            {evalData.critical_failures.map((err, idx) => (
-              <li key={idx}>{err}</li>
+          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {data.critical_failures.map((item, idx) => (
+              <li key={idx} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#96243C', alignItems: 'flex-start' }}>
+                <XCircle size={15} color="#D14966" style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>{item}</span>
+              </li>
             ))}
           </ul>
         </div>
       )}
 
-      {evalData.warning_flags && evalData.warning_flags.length > 0 && (
-        <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/80 text-amber-200 text-xs space-y-1.5">
-          <div className="flex items-center gap-2 font-bold text-amber-300">
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span>Inspection Warnings & Advisories:</span>
+      {/* Warnings Box */}
+      {data.warning_flags?.length > 0 && (
+        <div style={{
+          background: '#FFF6EC',
+          border: '1.5px solid #F8D6B0',
+          borderRadius: 16,
+          padding: '14px 18px',
+        }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#8C4D14', marginBottom: 8 }}>
+            Points to Double-Check:
           </div>
-          <ul className="list-disc list-inside space-y-1 pl-2 text-amber-200/90 font-mono">
-            {evalData.warning_flags.map((warn, idx) => (
-              <li key={idx}>{warn}</li>
+          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {data.warning_flags.map((item, idx) => (
+              <li key={idx} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#8C4D14', alignItems: 'flex-start' }}>
+                <AlertTriangle size={15} color="#B66D26" style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>{item}</span>
+              </li>
             ))}
           </ul>
         </div>
       )}
+
     </div>
   );
 }

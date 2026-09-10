@@ -1,97 +1,127 @@
-import React, { useState, useRef } from 'react';
-import { 
-  UploadCloud, 
-  Camera, 
-  Sparkles, 
-  RefreshCw, 
-  CheckCircle, 
-  AlertTriangle, 
-  Eye, 
-  SlidersHorizontal,
-  Maximize2
-} from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { UploadCloud, Camera, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 import { PRESET_SCENARIOS } from '../../data/presetSamples';
 
-export default function DocumentScanner({ 
-  documentImage, 
-  onDocumentChange, 
-  onRunInspection, 
-  loading,
-  qualityData
-}) {
-  const [useCamera, setUseCamera] = useState(false);
-  const fileInputRef = useRef(null);
-  const videoRef = useRef(null);
+const STEPS = [
+  'Checking image sharpness...',
+  'Reading passport security lines...',
+  'Checking for photo alterations...',
+  'Matching facial features...',
+  'Verifying alert databases...',
+];
 
-  const handleFileUpload = (e) => {
+const SCENARIO_THEMES = {
+  'VERIFIED':      { dot: '#4A8C5C', bg: '#F0F8F3', border: '#BCDCC7', text: '#3B734A', badge: 'Genuine' },
+  'MANUAL_REVIEW': { dot: '#B66D26', bg: '#FFF6EC', border: '#F8D6B0', text: '#945318', badge: 'Check Twice' },
+  'REJECTED':      { dot: '#D14966', bg: '#FEF1F3', border: '#F8BAC7', text: '#B0334E', badge: 'Fake / Altered' },
+};
+
+export default function DocumentScanner({ documentImage, onDocumentChange, onRunInspection, loading, qualityData, currentScenario }) {
+  const fileInputRef = useRef(null);
+  const videoRef     = useRef(null);
+  const [camera, setCamera] = useState(false);
+  const [step, setStep]     = useState(0);
+
+  useEffect(() => {
+    if (!loading) return;
+    const interval = setInterval(() => setStep(s => (s + 1) % STEPS.length), 650);
+    return () => clearInterval(interval);
+  }, [loading]);
+
+  const handleFile = e => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        onDocumentChange(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => onDocumentChange(ev.target.result, null);
+    reader.readAsDataURL(file);
   };
 
   const startCamera = async () => {
-    setUseCamera(true);
+    setCamera(true);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      console.warn("Camera access fallback", err);
-    }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch {}
   };
 
-  const captureFrame = () => {
-    if (videoRef.current) {
-      const canvas = document.createElement("canvas");
-      canvas.width = videoRef.current.videoWidth || 640;
-      canvas.height = videoRef.current.videoHeight || 480;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-      const b64 = canvas.toDataURL("image/jpeg", 0.95);
-      onDocumentChange(b64);
-      setUseCamera(false);
-      // Stop tracks
-      const stream = videoRef.current.srcObject;
-      if (stream) {
-        stream.getTracks().forEach(t => t.stop());
-      }
-    }
+  const capture = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width  = videoRef.current?.videoWidth  || 640;
+    canvas.height = videoRef.current?.videoHeight || 480;
+    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+    onDocumentChange(canvas.toDataURL('image/jpeg', 0.95), null);
+    videoRef.current?.srcObject?.getTracks().forEach(track => track.stop());
+    setCamera(false);
   };
 
   return (
-    <div className="space-y-4">
-      {/* Test Scenarios Ribbon */}
-      <div className="glass-panel p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm font-semibold text-slate-200">Checkpoint Test Vectors</span>
-            <span className="text-xs text-slate-400 font-mono">(1-Click Scenario Injectors)</span>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* Header with cursive/italic font */}
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <h1 style={{
+            fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, cursive, serif',
+            fontStyle: 'italic',
+            fontSize: 28,
+            color: '#2E1B24',
+            fontWeight: 700,
+          }}>
+            Passport & ID Check
+          </h1>
+          <p style={{ fontSize: 13, color: '#846271', marginTop: 2 }}>
+            Pick a test document below or upload a photo to verify authenticity instantly.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Test Sample Cards ── */}
+      <div className="card" style={{ padding: 18, background: '#FFFFFF' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <p className="section-label">Quick Test Samples</p>
+          <span style={{ color: '#B99DAA', fontFamily: '"Caveat", cursive', fontSize: 16 }}>
+            tap any sample to test
+          </span>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          {PRESET_SCENARIOS.map((scenario) => {
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
+          {PRESET_SCENARIOS.map(scenario => {
+            const theme = SCENARIO_THEMES[scenario.expectedVerdict] || SCENARIO_THEMES['VERIFIED'];
+            const active = currentScenario?.id === scenario.id;
             return (
               <button
                 key={scenario.id}
-                onClick={() => {
-                  onDocumentChange(scenario.documentImage, scenario);
+                onClick={() => onDocumentChange(scenario.documentImage, scenario)}
+                style={{
+                  background: active ? theme.bg : '#FFFDFD',
+                  border: `1.5px solid ${active ? theme.border : '#F7DFE6'}`,
+                  borderRadius: 16,
+                  padding: '12px 14px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.18s ease',
+                  boxShadow: active ? `0 4px 14px ${theme.border}` : '0 1px 4px rgba(212,120,154,0.04)',
                 }}
-                className="text-left p-2.5 rounded-xl border border-slate-800/80 bg-slate-900/50 hover:bg-slate-800/70 hover:border-cyan-500/40 transition-all duration-150 flex flex-col justify-between"
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#FFF4F7'; }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = '#FFFDFD'; }}
               >
-                <div>
-                  <div className="text-[11px] font-bold text-slate-200 line-clamp-1">{scenario.title}</div>
-                  <div className="text-[10px] text-slate-400 line-clamp-2 mt-1">{scenario.subtitle}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: theme.dot, flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: theme.text, textTransform: 'uppercase' }}>
+                    {theme.badge}
+                  </span>
                 </div>
-                <div className="mt-2 text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400 w-fit">
-                  {scenario.expectedVerdict}
+                <div style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: '#2E1B24',
+                  lineHeight: 1.3,
+                  marginBottom: 3,
+                }}>
+                  {scenario.title}
+                </div>
+                <div style={{ fontSize: 11, color: '#846271', lineHeight: 1.35 }}>
+                  {scenario.subtitle}
                 </div>
               </button>
             );
@@ -99,168 +129,155 @@ export default function DocumentScanner({
         </div>
       </div>
 
-      {/* Main Document Ingestion Box */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-8 glass-panel p-5 relative overflow-hidden flex flex-col justify-between min-h-[420px]">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
-              <span className="text-sm font-semibold text-slate-200">Document Scanner Feed</span>
+      {/* ── Main Scan Area ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 18, alignItems: 'start' }}>
+
+        {/* Document Display Box */}
+        <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16, background: '#FFFFFF' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h3 style={{
+                fontFamily: '"Cormorant Garamond", Georgia, cursive, serif',
+                fontStyle: 'italic',
+                fontSize: 20,
+                color: '#2E1B24',
+              }}>
+                Document Preview
+              </h3>
+              {currentScenario && (
+                <p style={{ fontSize: 11.5, color: '#D4789A', fontWeight: 600, marginTop: 1 }}>
+                  Loaded: {currentScenario.title}
+                </p>
+              )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 flex items-center gap-1.5 transition"
-              >
-                <UploadCloud className="w-3.5 h-3.5 text-cyan-400" />
-                Upload Image
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => fileInputRef.current?.click()}>
+                <UploadCloud size={14} color="#D4789A" /> Upload
               </button>
-              <button
-                onClick={startCamera}
-                className="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 flex items-center gap-1.5 transition"
-              >
-                <Camera className="w-3.5 h-3.5 text-cyan-400" />
-                Live Camera
+              <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={startCamera}>
+                <Camera size={14} color="#D4789A" /> Camera
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
             </div>
           </div>
 
-          {/* Canvas Display View */}
-          <div className="flex-1 rounded-xl border border-slate-800/80 bg-slate-950/80 overflow-hidden flex items-center justify-center relative min-h-[300px]">
-            {useCamera ? (
-              <div className="relative w-full h-full flex flex-col items-center justify-center">
-                <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover rounded-lg" />
-                <button
-                  onClick={captureFrame}
-                  className="absolute bottom-4 px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs rounded-xl shadow-lg flex items-center gap-2"
-                >
-                  <Camera className="w-4 h-4" /> Capture Frame
+          {/* Image Container */}
+          <div
+            onClick={() => !documentImage && fileInputRef.current?.click()}
+            style={{
+              minHeight: 280,
+              borderRadius: 16,
+              background: '#FFF8FA',
+              border: '1.5px dashed #F3D0DC',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative', overflow: 'hidden',
+              cursor: documentImage ? 'default' : 'pointer',
+            }}
+          >
+            {camera ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 20 }}>
+                <video ref={videoRef} autoPlay playsInline style={{ maxHeight: 250, borderRadius: 12, border: '1.5px solid #F3D0DC' }} />
+                <button className="btn btn-primary" onClick={capture}>
+                  <Camera size={14} /> Take Photo
                 </button>
               </div>
             ) : documentImage ? (
-              <div className="relative w-full h-full flex items-center justify-center p-3">
-                <img
-                  src={documentImage}
-                  alt="Captured Document"
-                  className="max-h-[340px] w-auto object-contain rounded-lg border border-slate-700/60 shadow-2xl"
-                />
-                <div className="absolute top-5 right-5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] font-mono text-cyan-400 border border-cyan-500/30">
-                  AUTO-RECTIFIED 4-POINT HOMOGRAPHY
-                </div>
-              </div>
+              <>
+                <img src={documentImage} alt="Passport document" style={{ maxHeight: 270, maxWidth: '100%', objectFit: 'contain', borderRadius: 12 }} />
+                {loading && <div className="scan-line" />}
+              </>
             ) : (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer text-center p-8 flex flex-col items-center"
-              >
-                <div className="w-16 h-16 rounded-2xl bg-cyan-950/40 border border-cyan-500/20 flex items-center justify-center mb-3">
-                  <UploadCloud className="w-8 h-8 text-cyan-400" />
+              <div style={{ textAlign: 'center', padding: 36 }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: 16,
+                  background: '#FDEEF3', border: '1.5px dashed #F3D0DC',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 12px',
+                }}>
+                  <UploadCloud size={22} color="#D4789A" />
                 </div>
-                <p className="text-sm font-medium text-slate-300">Drop passport image or click to select</p>
-                <p className="text-xs text-slate-400 mt-1">Accepts high-res PNG, JPG, or PDF scan</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#2E1B24', marginBottom: 4 }}>
+                  Drop an ID photo here
+                </p>
+                <p style={{ fontSize: 12, color: '#B99DAA' }}>
+                  or click to browse
+                </p>
+              </div>
+            )}
+
+            {/* Live Step Tracker Pill */}
+            {loading && (
+              <div style={{
+                position: 'absolute', bottom: 12, left: 14, right: 14,
+                background: 'rgba(255, 255, 255, 0.96)', borderRadius: 14,
+                border: '1.5px solid #F3D0DC', padding: '10px 16px',
+                display: 'flex', alignItems: 'center', gap: 10,
+                boxShadow: '0 4px 16px rgba(212,120,154,0.14)',
+              }}>
+                <Loader2 size={16} color="#D4789A" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: '#2E1B24', fontWeight: 600 }}>{STEPS[step]}</span>
               </div>
             )}
           </div>
 
-          {/* Action Trigger Button */}
-          <div className="mt-4 flex items-center justify-between">
-            <div className="text-xs text-slate-400 flex items-center gap-2 font-mono">
-              <span>RESOLUTION: 1200x800</span>
-              <span>|</span>
-              <span>DPI: 300+</span>
-            </div>
-
+          {/* Action Button */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
+              className="btn btn-primary"
               disabled={!documentImage || loading}
               onClick={onRunInspection}
-              className={`px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-lg ${
-                !documentImage || loading
-                  ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black shadow-cyan-500/25 active:scale-95'
-              }`}
+              style={{ padding: '12px 34px', fontSize: 14, borderRadius: 14 }}
             >
               {loading ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-black" />
-                  Running AI Screening Grid...
+                  <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                  Checking Document...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
-                  Run Multi-Modal Inspection
+                  <Sparkles size={15} />
+                  Run Verification
                 </>
               )}
             </button>
           </div>
         </div>
 
-        {/* Quality Telemetry & Glare Gauges */}
-        <div className="lg:col-span-4 glass-panel p-5 flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <SlidersHorizontal className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm font-semibold text-slate-200">Image Quality Telemetry</span>
+        {/* Image Clarity Side Card */}
+        <div className="card" style={{ padding: 18, background: '#FFFFFF' }}>
+          <p className="section-label">Image Clarity</p>
+          <p style={{ fontSize: 12, color: '#846271', marginBottom: 14, marginTop: -2 }}>
+            Clear photos ensure higher accuracy.
+          </p>
+
+          {[
+            { label: 'Sharpness', pct: 88, note: 'Text is clear and sharp' },
+            { label: 'Glare Check', pct: 95, note: 'No bright reflections' },
+            { label: 'Focus', pct: 92, note: 'Well-focused camera shot' },
+          ].map(item => (
+            <div key={item.label} style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#573B48' }}>{item.label}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#4A8C5C' }}>{item.pct}%</span>
+              </div>
+              <div className="progress">
+                <div className="progress-fill" style={{ width: `${item.pct}%`, background: '#4A8C5C' }} />
+              </div>
+              <p style={{ fontSize: 10.5, color: '#B99DAA', marginTop: 3 }}>{item.note}</p>
             </div>
+          ))}
 
-            <div className="space-y-3">
-              {/* Blur Gauge */}
-              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
-                <div className="flex justify-between items-center text-xs mb-1.5">
-                  <span className="text-slate-300">Edge Sharpness (Laplacian)</span>
-                  <span className="font-mono text-emerald-400 font-bold">
-                    {qualityData?.laplacian_variance || "214.5"} var
-                  </span>
-                </div>
-                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-400 h-full w-[85%]" />
-                </div>
-                <span className="text-[10px] text-slate-400 mt-1 inline-block">Pass Threshold: &gt; 80.0</span>
-              </div>
-
-              {/* Glare Gauge */}
-              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
-                <div className="flex justify-between items-center text-xs mb-1.5">
-                  <span className="text-slate-300">Laminate Specular Glare</span>
-                  <span className="font-mono text-cyan-400 font-bold">
-                    {qualityData?.illumination?.glare_ratio ? `${(qualityData.illumination.glare_ratio * 100).toFixed(1)}%` : "1.2%"}
-                  </span>
-                </div>
-                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-cyan-400 h-full w-[15%]" />
-                </div>
-                <span className="text-[10px] text-slate-400 mt-1 inline-block">Normal Limit: &lt; 8.0%</span>
-              </div>
-
-              {/* Tenengrad Focus Score */}
-              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
-                <div className="flex justify-between items-center text-xs mb-1.5">
-                  <span className="text-slate-300">Tenengrad Focus Energy</span>
-                  <span className="font-mono text-indigo-300 font-bold">
-                    {qualityData?.tenengrad_score || "1840.2"}
-                  </span>
-                </div>
-                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-indigo-400 h-full w-[90%]" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-3 bg-emerald-950/30 border border-emerald-800/40 rounded-xl flex items-center gap-2.5">
-            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span className="text-xs text-emerald-200">
-              Quality acceptable for ICAO compliant optical character extraction.
-            </span>
+          <div style={{
+            marginTop: 10, padding: '10px 12px', borderRadius: 12,
+            background: '#F0F8F3', border: '1px solid #BCDCC7',
+            fontSize: 12, color: '#3B734A', display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            <CheckCircle2 size={15} color="#4A8C5C" style={{ flexShrink: 0 }} />
+            <span>Image is ready for verification</span>
           </div>
         </div>
+
       </div>
     </div>
   );

@@ -1,189 +1,152 @@
 import React, { useState } from 'react';
-import { 
-  Layers, 
-  Flame, 
-  Cpu, 
-  Eye, 
-  Sparkles, 
-  Radio, 
-  FileText,
-  AlertCircle,
-  CheckCircle2,
-  Sliders
-} from 'lucide-react';
+import { Info, AlertCircle } from 'lucide-react';
+
+const LAYERS = [
+  { id: 'ela',        name: 'Digital Edits',      imgKey: 'ela_heatmap_base64',       flagKey: ['ela','is_spliced'],                 what: 'Highlights areas that were digitally altered or photoshopped.' },
+  { id: 'srm',        name: 'Paper Texture',      imgKey: 'srm_noise_base64',         flagKey: ['srm','has_noise_inconsistency'],    what: 'Checks the micro-grain of the paper to reveal patched areas.' },
+  { id: 'recapture',  name: 'Screen Photo Check', imgKey: 'fft_moire_base64',         flagKey: ['recapture','is_screen_recaptured'], what: 'Detects if this is a photo of a computer or phone screen rather than physical paper.' },
+  { id: 'gradcam',    name: 'AI Hotspot Map',     imgKey: 'gradcam_saliency_base64',  flagKey: ['deep_tamper','is_deep_forged'],     what: 'Shows exactly where the neural network found suspicious patterns.' },
+  { id: 'copy_move',  name: 'Clone Stamp',        imgKey: 'copy_move_base64',         flagKey: ['copy_move','copy_move_detected'],   what: 'Detects duplicated sections, copied stamps, or repeated signatures.' },
+  { id: 'jpeg_ghost', name: 'Pasted Elements',    imgKey: 'jpeg_ghost_base64',        flagKey: ['jpeg_ghost','ghosts_detected'],     what: 'Finds pieces copied from a different photo with different quality.' },
+];
 
 export default function ForensicViewerPane({ inspectionResult, originalImage }) {
   const [selectedLayer, setSelectedLayer] = useState('ela');
-  const [splitPosition, setSplitPosition] = useState(50);
 
-  const layers = inspectionResult?.layers || {};
+  const layers  = inspectionResult?.layers || {};
   const metrics = inspectionResult?.forensics_metrics || {};
 
-  const layerOptions = [
-    { 
-      id: 'ela', 
-      label: 'Error Level Analysis (ELA)', 
-      icon: Flame, 
-      img: layers.ela_heatmap_base64,
-      desc: 'Highlights compression disparity from edited dates, fonts, or spliced faces.',
-      flagged: metrics.ela?.is_spliced
-    },
-    { 
-      id: 'srm', 
-      label: 'SRM Noise Residuals', 
-      icon: Layers, 
-      img: layers.srm_noise_base64,
-      desc: 'Spatial Rich Model reveals noise texture discontinuity across modified regions.',
-      flagged: metrics.srm?.has_noise_inconsistency
-    },
-    { 
-      id: 'gradcam', 
-      label: 'Grad-CAM Deep Saliency', 
-      icon: Cpu, 
-      img: layers.gradcam_saliency_base64,
-      desc: 'Visual explainability heatmap pinpointing deep generative AI tampering.',
-      flagged: metrics.deep_tamper?.is_deep_forged
-    },
-    { 
-      id: 'copy_move', 
-      label: 'Copy-Move Clone Markers', 
-      icon: Sparkles, 
-      img: layers.copy_move_base64,
-      desc: 'ORB keypoint matching detects cloned seals, duplicate numbers, or stamps.',
-      flagged: metrics.copy_move?.copy_move_detected
-    },
-    { 
-      id: 'recapture', 
-      label: '2D FFT Moire Spectrum', 
-      icon: Radio, 
-      img: layers.fft_moire_base64,
-      desc: 'Identifies high-frequency screen raster spikes from mobile/monitor screen replay.',
-      flagged: metrics.recapture?.is_screen_recaptured
-    },
-    { 
-      id: 'jpeg_ghost', 
-      label: 'JPEG Ghost Disparity', 
-      icon: Eye, 
-      img: layers.jpeg_ghost_base64,
-      desc: 'Multi-quality ghost variance uncovering spliced source compressions.',
-      flagged: metrics.jpeg_ghost?.ghosts_detected
-    }
-  ];
-
-  const currentLayer = layerOptions.find(l => l.id === selectedLayer) || layerOptions[0];
-  const activeImage = currentLayer.img || originalImage;
+  const isFlagged = layer => Boolean(metrics[layer.flagKey[0]]?.[layer.flagKey[1]]);
+  const activeLayer = LAYERS.find(l => l.id === selectedLayer) || LAYERS[0];
+  const activeImage = layers[activeLayer.imgKey] || originalImage;
 
   return (
-    <div className="space-y-4">
-      {/* Forensic Layer Selector Navigation */}
-      <div className="glass-panel p-3">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          {layerOptions.map((layer) => {
-            const Icon = layer.icon;
-            const isSelected = selectedLayer === layer.id;
-            return (
-              <button
-                key={layer.id}
-                onClick={() => setSelectedLayer(layer.id)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 whitespace-nowrap transition-all ${
-                  isSelected
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-black shadow-md shadow-cyan-500/20 font-bold'
-                    : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800/80 border border-slate-800'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-black' : 'text-cyan-400'}`} />
-                <span>{layer.label}</span>
-                {layer.flagged && (
-                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                )}
-              </button>
-            );
-          })}
-        </div>
+    <div className="card" style={{ padding: 22, background: '#FFFFFF' }}>
+      <p className="section-label">Visual Forgery Analysis</p>
+      <h2 style={{
+        fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, cursive, serif',
+        fontStyle: 'italic',
+        fontSize: 22,
+        color: '#2E1B24',
+        marginBottom: 4,
+      }}>
+        Check for Altered or Edited Photos
+      </h2>
+      <p style={{ fontSize: 12.5, color: '#846271', marginBottom: 16 }}>
+        Select an inspection layer below to inspect the document under forensic filters.
+      </p>
+
+      {/* Layer selector tabs */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+        {LAYERS.map(layer => {
+          const flagged = isFlagged(layer);
+          const active  = selectedLayer === layer.id;
+          return (
+            <button
+              key={layer.id}
+              onClick={() => setSelectedLayer(layer.id)}
+              style={{
+                padding: '7px 14px',
+                borderRadius: 12,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.18s ease',
+                background: active ? 'linear-gradient(135deg, #D4789A, #B25779)' : '#FFFDFD',
+                color: active ? '#FFFFFF' : '#573B48',
+                border: `1.5px solid ${active ? '#B25779' : '#F7DFE6'}`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                boxShadow: active ? '0 3px 10px rgba(212,120,154,0.3)' : 'none',
+              }}
+            >
+              <span>{layer.name}</span>
+              <span style={{
+                width: 7, height: 7, borderRadius: '50%',
+                background: flagged ? '#D14966' : '#4A8C5C',
+                boxShadow: flagged ? '0 0 6px #D14966' : 'none',
+              }} />
+            </button>
+          );
+        })}
       </div>
 
-      {/* Interactive Dual-Pane Side-by-Side Canvas */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left: Original Document */}
-        <div className="lg:col-span-6 glass-panel p-4 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold font-mono uppercase text-slate-400">
-              Original Rectified Document
-            </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-              REFERENCE
-            </span>
-          </div>
-
-          <div className="flex-1 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-center p-3 min-h-[360px]">
-            {originalImage ? (
-              <img
-                src={originalImage}
-                alt="Original Document"
-                className="max-h-[340px] w-auto object-contain rounded-lg shadow-lg"
-              />
-            ) : (
-              <p className="text-xs text-slate-500">Run inspection to view original reference</p>
-            )}
-          </div>
-        </div>
-
-        {/* Right: Active Forensic Heatmap / Layer */}
-        <div className="lg:col-span-6 glass-panel p-4 flex flex-col justify-between border border-cyan-500/30 shadow-cyan-500/5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold font-mono uppercase text-cyan-400">
-                {currentLayer.label}
+      {/* Side-by-side comparison */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        {[
+          { label: 'Original Photo', img: originalImage, tag: 'Reference' },
+          { label: activeLayer.name, img: activeImage,   tag: isFlagged(activeLayer) ? 'Tampered' : 'Clean' },
+        ].map((item, idx) => (
+          <div key={idx}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#573B48' }}>{item.label}</span>
+              <span className={`pill ${idx === 1 && isFlagged(activeLayer) ? 'pill-red' : 'pill-pink'}`} style={{ fontSize: 10.5 }}>
+                {item.tag}
               </span>
-              {currentLayer.flagged ? (
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-800">
-                  TAMPER DETECTED
-                </span>
+            </div>
+            <div style={{
+              background: '#FFF8FA',
+              borderRadius: 14,
+              border: idx === 1 && isFlagged(activeLayer) ? '1.5px solid #F8BAC7' : '1.5px solid #F7DFE6',
+              minHeight: 220,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              padding: 6,
+            }}>
+              {item.img ? (
+                <img
+                  src={item.img}
+                  alt={item.label}
+                  style={{ maxHeight: 205, maxWidth: '100%', objectFit: 'contain', borderRadius: 10 }}
+                />
               ) : (
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800">
-                  AUTHENTIC
+                <span style={{ fontSize: 12, color: '#B99DAA' }}>
+                  Run check to see filter
                 </span>
               )}
             </div>
-
-            <span className="text-[10px] font-mono text-slate-400">
-              THERMAL / OVERLAY
-            </span>
           </div>
-
-          <div className="flex-1 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-center p-3 min-h-[360px]">
-            {activeImage ? (
-              <img
-                src={activeImage}
-                alt={currentLayer.label}
-                className="max-h-[340px] w-auto object-contain rounded-lg shadow-xl"
-              />
-            ) : (
-              <p className="text-xs text-slate-500">No forensic layer generated yet</p>
-            )}
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Forensic Layer Explanation Card */}
-      <div className="glass-panel p-4 border-l-4 border-l-cyan-400 flex items-start justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-            <Sliders className="w-4 h-4 text-cyan-400" />
-            <span>Forensic Interpretation: {currentLayer.label}</span>
-          </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            {currentLayer.desc}
-          </p>
-        </div>
-
-        {metrics.exif?.software_tag && metrics.exif.software_tag !== "None" && (
-          <div className="bg-rose-950/40 border border-rose-800/60 p-2.5 rounded-xl text-xs text-rose-300 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span>EXIF Software Footprint: <strong>{metrics.exif.software_tag}</strong></span>
-          </div>
-        )}
+      {/* Explanation banner */}
+      <div style={{
+        marginTop: 14,
+        padding: '12px 16px',
+        borderRadius: 14,
+        background: '#FFF4F7',
+        border: '1px solid #F5D2DC',
+        display: 'flex',
+        gap: 10,
+        alignItems: 'center',
+      }}>
+        <Info size={15} color="#D4789A" style={{ flexShrink: 0 }} />
+        <p style={{ fontSize: 12.5, color: '#573B48', lineHeight: 1.4 }}>
+          <strong>{activeLayer.name}:</strong> {activeLayer.what}
+        </p>
       </div>
+
+      {/* Editing software detected flag */}
+      {metrics.exif?.software_tag && metrics.exif.software_tag !== 'None' && (
+        <div style={{
+          marginTop: 10,
+          padding: '10px 14px',
+          borderRadius: 12,
+          background: '#FEF1F3',
+          border: '1px solid #F8BAC7',
+          fontSize: 12.5,
+          color: '#96243C',
+          display: 'flex',
+          gap: 8,
+          alignItems: 'center',
+        }}>
+          <AlertCircle size={15} color="#D14966" style={{ flexShrink: 0 }} />
+          <span>Edited with software: <strong>{metrics.exif.software_tag}</strong></span>
+        </div>
+      )}
     </div>
   );
 }

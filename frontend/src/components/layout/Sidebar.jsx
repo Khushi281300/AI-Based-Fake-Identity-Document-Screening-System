@@ -1,77 +1,100 @@
 import React from 'react';
-import { 
-  Scan, 
-  Layers, 
-  Binary, 
-  UserCheck, 
-  ShieldAlert, 
-  BarChart3, 
-  FileCheck2,
-  Cpu
-} from 'lucide-react';
+import { Scan, Microscope, CreditCard, Users, AlertCircle, BarChart2, ClipboardList } from 'lucide-react';
+
+const TABS = [
+  { id: 'scanner',    label: 'Document Check',    sub: 'Scan & verify',         Icon: Scan },
+  { id: 'forensics',  label: 'Edited Photos',     sub: 'Find hidden changes',   Icon: Microscope },
+  { id: 'mrz',        label: 'Security Line',     sub: 'Passport code check',   Icon: CreditCard },
+  { id: 'biometrics', label: 'Face Match',        sub: 'Photo vs live traveler',Icon: Users },
+  { id: 'watchlist',  label: 'Alert List',        sub: 'Lost & stolen IDs',     Icon: AlertCircle },
+  { id: 'analytics',  label: 'Daily Summary',     sub: 'Pass & alert stats',    Icon: BarChart2 },
+  { id: 'audit',      label: 'History & Log',     sub: 'Inspection receipts',   Icon: ClipboardList },
+];
 
 export default function Sidebar({ activeTab, onSelectTab }) {
-  const navItems = [
-    { id: 'scanner', label: 'Document Screening', icon: Scan, badge: 'Live' },
-    { id: 'forensics', label: 'Forensic Layers', icon: Layers },
-    { id: 'mrz', label: 'MRZ & ICAO Engine', icon: Binary },
-    { id: 'biometrics', label: 'Biometrics & Liveness', icon: UserCheck },
-    { id: 'watchlist', label: 'Watchlist & Graph', icon: ShieldAlert },
-    { id: 'analytics', label: 'Checkpoint Analytics', icon: BarChart3 },
-    { id: 'audit', label: 'Blockchain Audit Ledger', icon: FileCheck2 }
-  ];
-
   return (
-    <aside className="w-64 border-r border-slate-800/80 bg-[#080d1a]/80 backdrop-blur-lg flex flex-col justify-between p-4 shrink-0">
-      <div className="space-y-1.5">
-        <p className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">
-          Screening Modules
-        </p>
+    <aside style={{
+      width: 215,
+      background: '#FFFFFF',
+      borderRight: '1.5px solid #F4D9E2',
+      padding: '16px 12px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4,
+      flexShrink: 0,
+      overflowY: 'auto',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 8px 8px',
+      }}>
+        <span style={{
+          fontSize: 10,
+          fontWeight: 800,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          color: '#D4789A',
+        }}>
+          Navigation
+        </span>
+        <span style={{
+          fontFamily: '"Caveat", cursive',
+          fontSize: 15,
+          color: '#B99DAA',
+        }}>
+          quick menu
+        </span>
+      </div>
 
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onSelectTab(item.id)}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-                isActive
-                  ? 'bg-gradient-to-r from-cyan-950/80 to-slate-900 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/10'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
-                <span>{item.label}</span>
+      {TABS.map(({ id, label, sub, Icon }) => {
+        const active = activeTab === id;
+        return (
+          <button
+            key={id}
+            onClick={() => onSelectTab(id)}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '9px 10px',
+              borderRadius: 14,
+              border: active ? '1.5px solid #F3D0DC' : '1.5px solid transparent',
+              background: active ? '#FDEEF3' : 'transparent',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              textAlign: 'left',
+            }}
+            onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#FFF4F7'; }}
+            onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+          >
+            <div style={{
+              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: active ? 'linear-gradient(135deg, #D4789A, #B25779)' : '#FFF8FA',
+              border: active ? 'none' : '1px solid #F7DFE6',
+              boxShadow: active ? '0 2px 8px rgba(212,120,154,0.3)' : 'none',
+            }}>
+              <Icon size={15} color={active ? '#fff' : '#B99DAA'} />
+            </div>
+            <div>
+              <div style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: active ? '#2E1B24' : '#573B48',
+                lineHeight: 1.25,
+              }}>
+                {label}
               </div>
-              {item.badge && (
-                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Hardware / Engine Status Box */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-400 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-slate-300 font-medium">
-            <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-            Edge Inference Engine
-          </span>
-          <span className="text-[10px] font-mono text-emerald-400">ONNX / CUDA</span>
-        </div>
-        <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-          <div className="bg-gradient-to-r from-cyan-400 to-emerald-400 h-full w-[24%]" />
-        </div>
-        <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-          <span>Latency: 18ms</span>
-          <span>FPS: 30.0</span>
-        </div>
-      </div>
+              <div style={{ fontSize: 10.5, color: '#846271', lineHeight: 1.2, marginTop: 1 }}>
+                {sub}
+              </div>
+            </div>
+          </button>
+        );
+      })}
     </aside>
   );
 }
