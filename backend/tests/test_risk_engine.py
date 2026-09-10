@@ -1,0 +1,23 @@
+from app.services.risk_engine import evaluate_screening_risk
+
+def test_risk_engine_verified():
+    quality = {"quality_score": 92.0, "is_blurry": False}
+    mrz = {"all_check_digits_valid": True}
+    forensics = {"ela": {"is_spliced": False}, "copy_move": {"copy_move_detected": False}}
+    biometrics = {"cosine_similarity": 0.92, "liveness_score": 95.0}
+    database = {"is_blacklisted": False, "duplicate_identities": []}
+
+    res = evaluate_screening_risk(quality, mrz, forensics, biometrics, database)
+    assert res["outcome"] == "VERIFIED"
+    assert res["overall_risk_score"] >= 85.0
+
+def test_risk_engine_rejected_blacklist():
+    quality = {"quality_score": 92.0}
+    mrz = {"all_check_digits_valid": True}
+    forensics = {}
+    biometrics = {"cosine_similarity": 0.90, "liveness_score": 90.0}
+    database = {"is_blacklisted": True, "blacklist_reason": "Interpol Red Notice"}
+
+    res = evaluate_screening_risk(quality, mrz, forensics, biometrics, database)
+    assert res["outcome"] == "REJECTED"
+    assert any("WATCHLIST" in f for f in res["critical_failures"])
