@@ -4,11 +4,11 @@ import { PRESET_SCENARIOS } from '../../data/presetSamples';
 import { generateTD3MRZ } from '../../utils/mrzGenerator';
 
 const STEPS = [
-  'Checking image sharpness with Byakugan Vision...',
-  'Reading passport security lines & checksums...',
-  'Analyzing photo alterations & ELA residuals...',
-  'Matching facial biometric vectors...',
-  'Checking watchlists & sealing Merkle audit hash...',
+  'Assessing optical resolution & illumination geometry...',
+  'Extracting & verifying ICAO 9303 checksum math...',
+  'Executing Error Level Analysis (ELA) & noise residuals...',
+  'Computing 512-d facial biometric feature vectors...',
+  'Cross-referencing Interpol watchlist & Merkle ledger...',
 ];
 
 export default function DocumentScanner({
@@ -66,20 +66,20 @@ export default function DocumentScanner({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-      {/* Header with anime/clean font */}
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h1 style={{
-            fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, cursive, serif',
+            fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, serif',
             fontStyle: 'italic',
             fontSize: 28,
-            color: '#2E1B24',
+            color: '#1E293B',
             fontWeight: 700,
           }}>
-            Passport & Identity Inspection
+            Travel Document & Identity Inspection
           </h1>
-          <p style={{ fontSize: 13, color: '#846271', marginTop: 2 }}>
-            Powered by Byakugan Vision & Nichirin Sentry. Upload any ID or select a scenario below.
+          <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+            Autonomous multi-modal forensic verification conforming to ICAO Doc 9303 standards.
           </p>
         </div>
       </div>
@@ -87,9 +87,9 @@ export default function DocumentScanner({
       {/* ── Test Sample Cards ── */}
       <div className="card" style={{ padding: 18, background: '#FFFFFF' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <p className="section-label">Quick Test Scenarios</p>
-          <span style={{ color: '#B99DAA', fontFamily: '"Caveat", cursive', fontSize: 16 }}>
-            select scenario or upload your custom ID
+          <p className="section-label">Inspection Profiles & Test Scenarios</p>
+          <span style={{ color: '#94A3B8', fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: 12, fontWeight: 500 }}>
+            Select a test profile or upload an authentic document
           </span>
         </div>
 
@@ -364,12 +364,12 @@ export default function DocumentScanner({
               {loading ? (
                 <>
                   <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                  Running Shinobi Inspection...
+                  Executing Forensic Screening...
                 </>
               ) : (
                 <>
-                  <Sparkles size={15} />
-                  Run Verification
+                  <ShieldCheck size={16} />
+                  Run Full Verification
                 </>
               )}
             </button>
@@ -378,35 +378,35 @@ export default function DocumentScanner({
 
         {/* Image Clarity Side Card */}
         <div className="card" style={{ padding: 18, background: '#FFFFFF' }}>
-          <p className="section-label">Byakugan Clarity Check</p>
-          <p style={{ fontSize: 12, color: '#846271', marginBottom: 14, marginTop: -2 }}>
-            High-resolution focus ensures 100% forensic precision.
+          <p className="section-label">Optical Quality & Alignment</p>
+          <p style={{ fontSize: 12, color: '#64748B', marginBottom: 14, marginTop: -2 }}>
+            Pre-flight quality metrics assessed prior to forensic inference.
           </p>
 
           {[
-            { label: 'Sharpness', pct: 92, note: 'Text & laminate are razor sharp' },
-            { label: 'Glare & Moire', pct: 96, note: 'No optical flare or screen grid' },
-            { label: 'Focus & Angle', pct: 94, note: 'Aligned perspective rectangle' },
+            { label: 'Spatial Sharpness', pct: 92, note: 'Text & laminate edges well-resolved' },
+            { label: 'Specular Glare Check', pct: 96, note: 'No laminate optical flares detected' },
+            { label: 'Homography Perspective', pct: 94, note: 'Aligned rectangular 4-point bounds' },
           ].map(item => (
             <div key={item.label} style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#573B48' }}>{item.label}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#4A8C5C' }}>{item.pct}%</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>{item.label}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#2E6B39' }}>{item.pct}%</span>
               </div>
               <div className="progress">
-                <div className="progress-fill" style={{ width: `${item.pct}%`, background: '#4A8C5C' }} />
+                <div className="progress-fill" style={{ width: `${item.pct}%`, background: '#38A169' }} />
               </div>
-              <p style={{ fontSize: 10.5, color: '#B99DAA', marginTop: 3 }}>{item.note}</p>
+              <p style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 3 }}>{item.note}</p>
             </div>
           ))}
 
           <div style={{
             marginTop: 10, padding: '10px 12px', borderRadius: 12,
             background: '#F0F8F3', border: '1px solid #BCDCC7',
-            fontSize: 12, color: '#3B734A', display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 12, color: '#2E6B39', display: 'flex', alignItems: 'center', gap: 6,
           }}>
-            <CheckCircle2 size={15} color="#4A8C5C" style={{ flexShrink: 0 }} />
-            <span>Document ready for AI screening</span>
+            <CheckCircle2 size={15} color="#38A169" style={{ flexShrink: 0 }} />
+            <span>Document satisfies optical ingestion thresholds</span>
           </div>
         </div>
 

@@ -25,33 +25,33 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{
           width: 38, height: 38, borderRadius: 12,
-          background: 'linear-gradient(135deg, #FF7A00, #E27396)',
+          background: 'linear-gradient(135deg, #1E293B, #D4789A)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 3px 10px rgba(255,122,0,0.28)',
+          boxShadow: '0 3px 10px rgba(30,41,59,0.25)',
           flexShrink: 0,
         }}>
-          <Shield size={18} color="#fff" />
+          <Shield size={19} color="#fff" />
         </div>
         <div>
           <span style={{
-            fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, cursive, serif',
+            fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, serif',
             fontStyle: 'italic',
             fontSize: 24,
             fontWeight: 700,
-            color: '#2E1B24',
+            color: '#1E293B',
             letterSpacing: '-0.01em',
           }}>
-            Shinobi-Hashira
+            ARGUS
           </span>
           <span style={{
             fontSize: 12,
-            color: '#B99DAA',
-            marginLeft: 8,
-            fontWeight: 500,
-            fontFamily: '"Caveat", cursive',
-            letterSpacing: '0.02em',
+            color: '#64748B',
+            marginLeft: 9,
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase'
           }}>
-            Byakugan Vision • Nichirin Document Sentry
+            Border & Identity Screening Grid
           </span>
         </div>
       </div>
@@ -150,12 +150,12 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
             }}>
               {officerName}
             </div>
-            <div style={{ fontSize: 10.5, color: '#846271', fontWeight: 500 }}>
-              {isOnline ? '7th Hokage • Active Sentry' : 'Away'} • Gate 12
+            <div style={{ fontSize: 10.5, color: '#64748B', fontWeight: 600 }}>
+              {isOnline ? 'Senior Inspection Officer' : 'Away'} • Gate 12
             </div>
           </div>
 
-          <ChevronDown size={14} color="#B99DAA" style={{ marginLeft: 2 }} />
+          <ChevronDown size={14} color="#94A3B8" style={{ marginLeft: 2 }} />
         </button>
 
         {/* Working Profile Dropdown */}
@@ -186,8 +186,8 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
               }}>
                 {officerName}
               </div>
-              <div style={{ fontSize: 11, color: '#846271', marginTop: 2 }}>
-                Officer ID: #KONOHA-HASHIRA-07 • Border Corps
+              <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, fontWeight: 500 }}>
+                Officer ID: #KON-742 • Border Control Division
               </div>
             </div>
 
