@@ -3,7 +3,7 @@ import { Shield, ChevronDown, Check, Sparkles, User, LogOut } from 'lucide-react
 
 export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [officerName, setOfficerName] = useState('Tanjiro Kamado');
+  const [officerName, setOfficerName] = useState('Uzumaki Naruto');
   const [isOnline, setIsOnline] = useState(true);
 
   return (
@@ -25,9 +25,9 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{
           width: 38, height: 38, borderRadius: 12,
-          background: 'linear-gradient(135deg, #E27396, #8C3A5E)',
+          background: 'linear-gradient(135deg, #FF7A00, #E27396)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 3px 10px rgba(212,120,154,0.32)',
+          boxShadow: '0 3px 10px rgba(255,122,0,0.28)',
           flexShrink: 0,
         }}>
           <Shield size={18} color="#fff" />
@@ -41,7 +41,7 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
             color: '#2E1B24',
             letterSpacing: '-0.01em',
           }}>
-            Sukitōru
+            Shinobi-Hashira
           </span>
           <span style={{
             fontSize: 12,
@@ -51,7 +51,7 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
             fontFamily: '"Caveat", cursive',
             letterSpacing: '0.02em',
           }}>
-            透き通る世界 • see-through screening
+            Byakugan Vision • Nichirin Document Sentry
           </span>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
               {officerName}
             </div>
             <div style={{ fontSize: 10.5, color: '#846271', fontWeight: 500 }}>
-              {isOnline ? 'Active Officer' : 'Away'} • Gate 12
+              {isOnline ? '7th Hokage • Active Sentry' : 'Away'} • Gate 12
             </div>
           </div>
 
@@ -164,7 +164,7 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
             position: 'absolute',
             top: 'calc(100% + 8px)',
             right: 0,
-            width: 240,
+            width: 250,
             background: '#FFFFFF',
             border: '1.5px solid #F3D0DC',
             borderRadius: 18,
@@ -187,7 +187,7 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
                 {officerName}
               </div>
               <div style={{ fontSize: 11, color: '#846271', marginTop: 2 }}>
-                Officer ID: #HASHIRA-01 • Corps Division
+                Officer ID: #KONOHA-HASHIRA-07 • Border Corps
               </div>
             </div>
 

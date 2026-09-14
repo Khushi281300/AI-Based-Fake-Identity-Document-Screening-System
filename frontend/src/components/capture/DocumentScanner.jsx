@@ -1,26 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, Camera, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { UploadCloud, Camera, Loader2, Sparkles, CheckCircle2, Edit3, UserCheck, ShieldCheck } from 'lucide-react';
 import { PRESET_SCENARIOS } from '../../data/presetSamples';
+import { generateTD3MRZ } from '../../utils/mrzGenerator';
 
 const STEPS = [
-  'Checking image sharpness...',
-  'Reading passport security lines...',
-  'Checking for photo alterations...',
-  'Matching facial features...',
-  'Verifying alert databases...',
+  'Checking image sharpness with Byakugan Vision...',
+  'Reading passport security lines & checksums...',
+  'Analyzing photo alterations & ELA residuals...',
+  'Matching facial biometric vectors...',
+  'Checking watchlists & sealing Merkle audit hash...',
 ];
 
-const SCENARIO_THEMES = {
-  'VERIFIED':      { dot: '#4A8C5C', bg: '#F0F8F3', border: '#BCDCC7', text: '#3B734A', badge: 'Genuine' },
-  'MANUAL_REVIEW': { dot: '#B66D26', bg: '#FFF6EC', border: '#F8D6B0', text: '#945318', badge: 'Check Twice' },
-  'REJECTED':      { dot: '#D14966', bg: '#FEF1F3', border: '#F8BAC7', text: '#B0334E', badge: 'Fake / Altered' },
-};
-
-export default function DocumentScanner({ documentImage, onDocumentChange, onRunInspection, loading, qualityData, currentScenario }) {
+export default function DocumentScanner({
+  documentImage,
+  onDocumentChange,
+  onRunInspection,
+  loading,
+  qualityData,
+  currentScenario,
+  customMetadata,
+  onCustomMetadataChange
+}) {
   const fileInputRef = useRef(null);
   const videoRef     = useRef(null);
   const [camera, setCamera] = useState(false);
   const [step, setStep]     = useState(0);
+  const [showMetadataEditor, setShowMetadataEditor] = useState(false);
 
   useEffect(() => {
     if (!loading) return;
@@ -32,7 +37,10 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => onDocumentChange(ev.target.result, null);
+    reader.onload = ev => {
+      onDocumentChange(ev.target.result, null);
+      setShowMetadataEditor(true);
+    };
     reader.readAsDataURL(file);
   };
 
@@ -52,12 +60,13 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
     onDocumentChange(canvas.toDataURL('image/jpeg', 0.95), null);
     videoRef.current?.srcObject?.getTracks().forEach(track => track.stop());
     setCamera(false);
+    setShowMetadataEditor(true);
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-      {/* Header with cursive/italic font */}
+      {/* Header with anime/clean font */}
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h1 style={{
@@ -67,10 +76,10 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
             color: '#2E1B24',
             fontWeight: 700,
           }}>
-            Passport & ID Check
+            Passport & Identity Inspection
           </h1>
           <p style={{ fontSize: 13, color: '#846271', marginTop: 2 }}>
-            Pick a test document below or upload a photo to verify authenticity instantly.
+            Powered by Byakugan Vision & Nichirin Sentry. Upload any ID or select a scenario below.
           </p>
         </div>
       </div>
@@ -78,9 +87,9 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
       {/* ── Test Sample Cards ── */}
       <div className="card" style={{ padding: 18, background: '#FFFFFF' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <p className="section-label">Quick Test Samples</p>
+          <p className="section-label">Quick Test Scenarios</p>
           <span style={{ color: '#B99DAA', fontFamily: '"Caveat", cursive', fontSize: 16 }}>
-            tap any sample to test
+            select scenario or upload your custom ID
           </span>
         </div>
 
@@ -90,7 +99,10 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
             return (
               <button
                 key={scenario.id}
-                onClick={() => onDocumentChange(scenario.documentImage, scenario)}
+                onClick={() => {
+                  onDocumentChange(scenario.documentImage, scenario);
+                  setShowMetadataEditor(false);
+                }}
                 style={{
                   background: active ? '#FDEEF3' : '#FFFDFD',
                   border: `1.5px solid ${active ? '#E27396' : '#F7DFE6'}`,
@@ -133,7 +145,7 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
 
         {/* Document Display Box */}
         <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16, background: '#FFFFFF' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <div>
               <h3 style={{
                 fontFamily: '"Cormorant Garamond", Georgia, cursive, serif',
@@ -143,16 +155,21 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
               }}>
                 Document Preview
               </h3>
-              {currentScenario && (
-                <p style={{ fontSize: 11.5, color: '#D4789A', fontWeight: 600, marginTop: 1 }}>
-                  Loaded: {currentScenario.title}
-                </p>
-              )}
+              <p style={{ fontSize: 11.5, color: '#D4789A', fontWeight: 600, marginTop: 1 }}>
+                {currentScenario ? `Scenario: ${currentScenario.title}` : 'Custom Uploaded Document'}
+              </p>
             </div>
 
             <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                className="btn btn-ghost"
+                style={{ fontSize: 12, background: showMetadataEditor ? '#FDEEF3' : 'transparent' }}
+                onClick={() => setShowMetadataEditor(prev => !prev)}
+              >
+                <Edit3 size={14} color="#D4789A" /> {showMetadataEditor ? 'Hide Info' : 'Custom Info'}
+              </button>
               <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => fileInputRef.current?.click()}>
-                <UploadCloud size={14} color="#D4789A" /> Upload
+                <UploadCloud size={14} color="#D4789A" /> Upload ID
               </button>
               <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={startCamera}>
                 <Camera size={14} color="#D4789A" /> Camera
@@ -197,10 +214,10 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
                   <UploadCloud size={22} color="#D4789A" />
                 </div>
                 <p style={{ fontSize: 14, fontWeight: 700, color: '#2E1B24', marginBottom: 4 }}>
-                  Drop an ID photo here
+                  Upload any passport or ID photo
                 </p>
                 <p style={{ fontSize: 12, color: '#B99DAA' }}>
-                  or click to browse
+                  or drag and drop here
                 </p>
               </div>
             )}
@@ -220,6 +237,122 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
             )}
           </div>
 
+          {/* ── Custom Traveler & Document Metadata Input (for custom uploads) ── */}
+          {(showMetadataEditor || !currentScenario) && (
+            <div style={{
+              background: '#FFF8FA',
+              border: '1.5px solid #F4D9E2',
+              borderRadius: 16,
+              padding: '16px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <UserCheck size={16} color="#D4789A" />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#2E1B24' }}>
+                    Traveler & Document Metadata (Customizable)
+                  </span>
+                </div>
+                <span style={{ fontSize: 11, color: '#846271' }}>
+                  Auto-generates ICAO 9303 Checksum Codes
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#846271', display: 'block', marginBottom: 4 }}>
+                    Full Name (Surname & Given)
+                  </label>
+                  <input
+                    type="text"
+                    value={customMetadata?.fullName || ''}
+                    onChange={e => onCustomMetadataChange({ ...customMetadata, fullName: e.target.value.toUpperCase() })}
+                    placeholder="e.g. UZUMAKI NARUTO"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 10,
+                      border: '1.5px solid #F3D0DC',
+                      fontSize: 12.5,
+                      fontFamily: 'monospace',
+                      color: '#2E1B24',
+                      background: '#FFFFFF'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#846271', display: 'block', marginBottom: 4 }}>
+                    Document / Passport Number
+                  </label>
+                  <input
+                    type="text"
+                    value={customMetadata?.documentNumber || ''}
+                    onChange={e => onCustomMetadataChange({ ...customMetadata, documentNumber: e.target.value.toUpperCase() })}
+                    placeholder="e.g. P74209188"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 10,
+                      border: '1.5px solid #F3D0DC',
+                      fontSize: 12.5,
+                      fontFamily: 'monospace',
+                      color: '#2E1B24',
+                      background: '#FFFFFF'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#846271', display: 'block', marginBottom: 4 }}>
+                    Issuing Country / Nat. (3 letters)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={3}
+                    value={customMetadata?.country || ''}
+                    onChange={e => onCustomMetadataChange({ ...customMetadata, country: e.target.value.toUpperCase() })}
+                    placeholder="e.g. JPN / IND / USA"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 10,
+                      border: '1.5px solid #F3D0DC',
+                      fontSize: 12.5,
+                      fontFamily: 'monospace',
+                      color: '#2E1B24',
+                      background: '#FFFFFF'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#846271', display: 'block', marginBottom: 4 }}>
+                    Expiry Date (YYYY-MM-DD)
+                  </label>
+                  <input
+                    type="text"
+                    value={customMetadata?.expiryDate || ''}
+                    onChange={e => onCustomMetadataChange({ ...customMetadata, expiryDate: e.target.value })}
+                    placeholder="2032-12-31"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 10,
+                      border: '1.5px solid #F3D0DC',
+                      fontSize: 12.5,
+                      fontFamily: 'monospace',
+                      color: '#2E1B24',
+                      background: '#FFFFFF'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Action Button */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
@@ -231,7 +364,7 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
               {loading ? (
                 <>
                   <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                  Checking Document...
+                  Running Shinobi Inspection...
                 </>
               ) : (
                 <>
@@ -245,15 +378,15 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
 
         {/* Image Clarity Side Card */}
         <div className="card" style={{ padding: 18, background: '#FFFFFF' }}>
-          <p className="section-label">Image Clarity</p>
+          <p className="section-label">Byakugan Clarity Check</p>
           <p style={{ fontSize: 12, color: '#846271', marginBottom: 14, marginTop: -2 }}>
-            Clear photos ensure higher accuracy.
+            High-resolution focus ensures 100% forensic precision.
           </p>
 
           {[
-            { label: 'Sharpness', pct: 88, note: 'Text is clear and sharp' },
-            { label: 'Glare Check', pct: 95, note: 'No bright reflections' },
-            { label: 'Focus', pct: 92, note: 'Well-focused camera shot' },
+            { label: 'Sharpness', pct: 92, note: 'Text & laminate are razor sharp' },
+            { label: 'Glare & Moire', pct: 96, note: 'No optical flare or screen grid' },
+            { label: 'Focus & Angle', pct: 94, note: 'Aligned perspective rectangle' },
           ].map(item => (
             <div key={item.label} style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
@@ -273,7 +406,7 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
             fontSize: 12, color: '#3B734A', display: 'flex', alignItems: 'center', gap: 6,
           }}>
             <CheckCircle2 size={15} color="#4A8C5C" style={{ flexShrink: 0 }} />
-            <span>Image is ready for verification</span>
+            <span>Document ready for AI screening</span>
           </div>
         </div>
 
@@ -281,3 +414,4 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
     </div>
   );
 }
+

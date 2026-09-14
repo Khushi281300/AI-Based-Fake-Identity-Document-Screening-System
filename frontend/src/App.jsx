@@ -13,6 +13,7 @@ import AuditAndBlockchainLedger from './components/audit/AuditAndBlockchainLedge
 
 import { PRESET_SCENARIOS } from './data/presetSamples';
 import { runFullInspection, checkHealth } from './api/client';
+import { generateTD3MRZ } from './utils/mrzGenerator';
 import { useEffect } from 'react';
 
 export default function App() {
@@ -23,6 +24,14 @@ export default function App() {
   const [currentScenario, setCurrentScenario] = useState(null);
   const [result, setResult] = useState(null);
   const [engineMode, setEngineMode] = useState('LIVE_BACKEND');
+  const [customMetadata, setCustomMetadata] = useState({
+    fullName: 'UZUMAKI NARUTO',
+    documentNumber: 'P74209188',
+    country: 'JPN',
+    expiryDate: '2032-12-31',
+    dob: '1990-10-10',
+    sex: 'M'
+  });
 
   useEffect(() => {
     const s = PRESET_SCENARIOS[0];
@@ -39,25 +48,52 @@ export default function App() {
   const handleDocumentChange = (imgB64, scenario = null) => {
     setDocumentImage(imgB64);
     setResult(null);
-    if (scenario) { setCurrentScenario(scenario); setLiveFaceImage(scenario.liveFace); }
+    if (scenario) {
+      setCurrentScenario(scenario);
+      setLiveFaceImage(scenario.liveFace);
+    } else {
+      setCurrentScenario(null);
+    }
   };
 
   const handleRunInspection = async () => {
     if (!documentImage) return;
     setLoading(true);
+
+    // Dynamic MRZ lines determination
+    let mrzLinesToSend = currentScenario?.mrzLines;
+    if (!mrzLinesToSend) {
+      const parts = (customMetadata.fullName || 'UZUMAKI NARUTO').trim().split(' ');
+      const surname = parts[0] || 'UZUMAKI';
+      const given = parts.slice(1).join(' ') || 'NARUTO';
+      const expYYMMDD = (customMetadata.expiryDate || '2032-12-31').replace(/[^0-9]/g, '').slice(2, 8);
+      const dobYYMMDD = (customMetadata.dob || '1990-10-10').replace(/[^0-9]/g, '').slice(2, 8);
+
+      mrzLinesToSend = generateTD3MRZ({
+        country: customMetadata.country || 'JPN',
+        surname: surname,
+        givenNames: given,
+        docNumber: customMetadata.documentNumber || 'P74209188',
+        nationality: customMetadata.country || 'JPN',
+        expiry: expYYMMDD || '321231',
+        dob: dobYYMMDD || '901010',
+        sex: customMetadata.sex || 'M'
+      });
+    }
+
     try {
       const res = await runFullInspection({
         document_image_base64: documentImage,
         live_face_base64: liveFaceImage,
-        mrz_lines: currentScenario?.mrzLines || null,
+        mrz_lines: mrzLinesToSend,
         officer_id: 'OFFICER-742',
-        checkpoint_id: 'BOMBAY-INTL-T2-E4'
+        checkpoint_id: 'KONOHA-INTL-T1-E7'
       });
       setResult(res);
       setEngineMode('LIVE_BACKEND');
     } catch {
       setEngineMode('DEMO_SCENARIO');
-      // Rich scenario-aware fallback
+      // Rich scenario-aware fallback using user-entered metadata
       const id = currentScenario?.id || '';
       if (id === 'tampered_expiry_ela') {
         setResult({
@@ -99,12 +135,46 @@ export default function App() {
           layers: { ela_heatmap_base64: documentImage }
         });
       } else {
+        // Custom upload or genuine default using user's metadata
+        const fullName = currentScenario ? 'ERIKSSON ANNA MARIA' : (customMetadata.fullName || 'UZUMAKI NARUTO');
+        const docNum = currentScenario ? 'L898902C3' : (customMetadata.documentNumber || 'P74209188');
+        const country = currentScenario ? 'UTO' : (customMetadata.country || 'JPN');
+        const expiry = currentScenario ? '2030-04-15' : (customMetadata.expiryDate || '2032-12-31');
+
         setResult({
           status: 'SUCCESS',
-          risk_evaluation: { outcome: 'VERIFIED', overall_risk_score: 96.5, confidence_score: 98.8, recommendation: 'Document verified. All checks passed. Passenger may proceed.', critical_failures: [], warning_flags: [] },
-          document_fields: { format: 'TD3', full_name: 'ERIKSSON ANNA MARIA', document_number: 'L898902C3', date_of_birth: '1974-08-12', expiry_date: '2030-04-15', all_check_digits_valid: true, raw_mrz: currentScenario?.mrzLines || ['P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<', 'L898902C36UTO7408122F3004159ZE184226B<<<<<10'] },
-          biometrics: { verdict: 'MATCH', similarity_percentage: 94.8, cosine_similarity: 0.948, liveness_score: 97, spoof_classification: 'REAL_HUMAN' },
-          layers: { ela_heatmap_base64: documentImage }
+          risk_evaluation: {
+            outcome: 'VERIFIED',
+            overall_risk_score: 96.5,
+            confidence_score: 98.8,
+            recommendation: 'Document verified. All checks passed with Byakugan Sentry. Traveler authorized.',
+            critical_failures: [],
+            warning_flags: []
+          },
+          document_fields: {
+            format: 'TD3',
+            doc_type: 'PASSPORT',
+            full_name: fullName,
+            document_number: docNum,
+            issuing_country: country,
+            nationality: country,
+            date_of_birth: customMetadata.dob || '1990-10-10',
+            expiry_date: expiry,
+            all_check_digits_valid: true,
+            raw_mrz: mrzLinesToSend
+          },
+          biometrics: {
+            verdict: 'MATCH',
+            similarity_percentage: 94.8,
+            cosine_similarity: 0.948,
+            liveness_score: 97,
+            spoof_classification: 'REAL_HUMAN'
+          },
+          layers: {
+            original_rectified_base64: documentImage,
+            doc_face_crop_base64: documentImage,
+            ela_heatmap_base64: documentImage
+          }
         });
       }
     } finally { setLoading(false); }
@@ -126,6 +196,8 @@ export default function App() {
                 loading={loading}
                 qualityData={result?.quality}
                 currentScenario={currentScenario}
+                customMetadata={customMetadata}
+                onCustomMetadataChange={setCustomMetadata}
               />
               {result && (
                 <>
