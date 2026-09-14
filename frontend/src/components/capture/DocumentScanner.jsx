@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, Camera, Loader2, Sparkles, CheckCircle2, Edit3, UserCheck, ShieldCheck, FileText, User, RefreshCw } from 'lucide-react';
+import { UploadCloud, Camera, Loader2, Sparkles, CheckCircle2, RefreshCw, Smartphone, ChevronRight, ShieldCheck, User } from 'lucide-react';
 import { PRESET_SCENARIOS } from '../../data/presetSamples';
 
 const STEPS = [
-  'Assessing optical resolution & illumination geometry...',
-  'Extracting & verifying ICAO 9303 checksum math...',
-  'Executing Error Level Analysis (ELA) & noise residuals...',
-  'Computing 512-d facial biometric feature vectors...',
-  'Cross-referencing Interpol watchlist & Merkle ledger...',
+  'Aligning document perspective...',
+  'Checking ICAO Doc 9303 checksums...',
+  'Scanning for digital edits & ELA deltas...',
+  'Analyzing optical texture & Moiré patterns...',
+  'Verifying biometric facial embedding...',
 ];
 
 export default function DocumentScanner({
@@ -17,17 +17,15 @@ export default function DocumentScanner({
   onLiveFaceChange,
   onRunInspection,
   loading,
-  qualityData,
   currentScenario,
-  customMetadata,
-  onCustomMetadataChange
 }) {
-  const docFileRef  = useRef(null);
-  const liveFileRef = useRef(null);
-  const videoRef    = useRef(null);
-  const [cameraMode, setCameraMode] = useState(null); // 'doc' or 'face'
-  const [step, setStep]             = useState(0);
-  const [showMetadataEditor, setShowMetadataEditor] = useState(false);
+  const fileInputRef  = useRef(null);
+  const selfieFileRef = useRef(null);
+  const videoRef      = useRef(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraTarget, setCameraTarget] = useState('doc'); // 'doc' or 'selfie'
+  const [step, setStep]                 = useState(0);
+  const [showSelfieBox, setShowSelfieBox] = useState(false);
 
   useEffect(() => {
     if (!loading) return;
@@ -39,13 +37,11 @@ export default function DocumentScanner({
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => {
-      onDocumentChange(ev.target.result, null);
-    };
+    reader.onload = ev => onDocumentChange(ev.target.result, null);
     reader.readAsDataURL(file);
   };
 
-  const handleLiveFile = e => {
+  const handleSelfieFile = e => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -55,12 +51,14 @@ export default function DocumentScanner({
     reader.readAsDataURL(file);
   };
 
-  const startCamera = async mode => {
-    setCameraMode(mode);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) videoRef.current.srcObject = stream;
-    } catch {}
+  const startCamera = (target = 'doc') => {
+    setCameraTarget(target);
+    setCameraActive(true);
+    navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(stream => {
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      })
+      .catch(() => {});
   };
 
   const captureCamera = () => {
@@ -69,63 +67,96 @@ export default function DocumentScanner({
     canvas.height = videoRef.current?.videoHeight || 480;
     canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
     const b64 = canvas.toDataURL('image/jpeg', 0.95);
-    
-    if (cameraMode === 'doc') {
+
+    if (cameraTarget === 'doc') {
       onDocumentChange(b64, null);
-    } else if (cameraMode === 'face') {
+    } else {
       if (onLiveFaceChange) onLiveFaceChange(b64);
     }
 
     videoRef.current?.srcObject?.getTracks().forEach(track => track.stop());
-    setCameraMode(null);
+    setCameraActive(false);
   };
 
-  const clearAll = () => {
+  const resetScanner = () => {
     onDocumentChange(null, null);
     if (onLiveFaceChange) onLiveFaceChange(null);
+    setShowSelfieBox(false);
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{
+      maxWidth: 580,
+      margin: '0 auto',
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 16
+    }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-        <div>
-          <h1 style={{
-            fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, serif',
-            fontStyle: 'italic',
-            fontSize: 28,
-            color: '#1E293B',
-            fontWeight: 700,
-          }}>
-            Travel Document & Biometric Acquisition
-          </h1>
-          <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
-            Upload travel document and traveler photo or signature to execute real-time forensic & biometric matching.
-          </p>
+      {/* Mobile-Style Phone Card */}
+      <div style={{
+        background: '#FFFFFF',
+        borderRadius: 28,
+        border: '1.5px solid #F3D0DC',
+        boxShadow: '0 12px 36px rgba(212,120,154,0.12), 0 2px 8px rgba(0,0,0,0.03)',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+
+        {/* App-like Top Bar */}
+        <div style={{
+          padding: '16px 20px 14px',
+          borderBottom: '1px solid #F9E8EE',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'linear-gradient(to bottom, #FFFDFE, #FFFFFF)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: 'linear-gradient(135deg, #E27396, #B25779)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <Smartphone size={16} color="#FFFFFF" />
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1E293B', lineHeight: 1.2 }}>
+                Document Scanner
+              </div>
+              <div style={{ fontSize: 11, color: '#94A3B8' }}>
+                Position ID or passport inside frame
+              </div>
+            </div>
+          </div>
+
+          {(documentImage || liveFaceImage || currentScenario) && (
+            <button
+              onClick={resetScanner}
+              style={{
+                background: '#FFF5F8', border: '1px solid #F5D2DC',
+                borderRadius: 20, padding: '4px 10px', fontSize: 11,
+                color: '#B25779', fontWeight: 600, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 4
+              }}
+            >
+              <RefreshCw size={11} /> Reset
+            </button>
+          )}
         </div>
 
-        {(documentImage || liveFaceImage || currentScenario) && (
-          <button
-            onClick={clearAll}
-            className="btn btn-ghost"
-            style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <RefreshCw size={13} /> Reset / Start Fresh
-          </button>
-        )}
-      </div>
-
-      {/* ── Test Profile Presets (Expandable / Optional) ── */}
-      <div className="card" style={{ padding: 16, background: '#FFFFFF' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <p className="section-label">Demo Scenario Profiles (Optional)</p>
-          <span style={{ color: '#94A3B8', fontSize: 11 }}>
-            Click to load a pre-configured fraud test, or upload your own files below
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+        {/* Quick Scenario Pills Strip */}
+        <div style={{
+          padding: '10px 16px',
+          background: '#FFF9FB',
+          borderBottom: '1px solid #F9E8EE',
+          display: 'flex',
+          gap: 6,
+          overflowX: 'auto',
+          scrollbarWidth: 'none'
+        }}>
           {PRESET_SCENARIOS.map((scenario, index) => {
             const active = currentScenario?.id === scenario.id;
             return (
@@ -136,338 +167,258 @@ export default function DocumentScanner({
                   if (onLiveFaceChange) onLiveFaceChange(scenario.liveFace);
                 }}
                 style={{
-                  background: active ? '#FDEEF3' : '#FFFDFD',
-                  border: `1.5px solid ${active ? '#E27396' : '#F7DFE6'}`,
-                  borderRadius: 14,
-                  padding: '10px 12px',
+                  background: active ? '#D4789A' : '#FFFFFF',
+                  color: active ? '#FFFFFF' : '#475569',
+                  border: `1px solid ${active ? '#D4789A' : '#F0D4DE'}`,
+                  borderRadius: 20,
+                  padding: '5px 12px',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
                   cursor: 'pointer',
-                  textAlign: 'left',
                   transition: 'all 0.15s ease',
-                  boxShadow: active ? '0 3px 10px rgba(226,115,150,0.18)' : 'none',
+                  flexShrink: 0
                 }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#FFF4F7'; }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.background = '#FFFDFD'; }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: active ? '#E27396' : '#D4789A' }} />
-                  <span style={{ fontSize: 9.5, fontWeight: 700, color: '#B25779', textTransform: 'uppercase' }}>
-                    Scenario {index + 1}
-                  </span>
-                </div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#2E1B24', lineHeight: 1.25 }}>
-                  {scenario.title}
-                </div>
+                Sample {index + 1}: {scenario.title.split('(')[0].trim()}
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* ── Main Dual Acquisition Stations (Document + Live Traveler Asset) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 18, alignItems: 'start' }}>
+        {/* Main Viewfinder / Camera Screen */}
+        <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          
+          <div style={{
+            position: 'relative',
+            borderRadius: 22,
+            background: '#181216',
+            minHeight: 280,
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.2)'
+          }}>
 
-        {/* 1. Document Upload Box */}
-        <div className="card" style={{ padding: 20, background: '#FFFFFF', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FileText size={18} color="#D4789A" />
-              <div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1E293B', margin: 0 }}>
-                  1. Travel Document / Passport Scan
-                </h3>
-                <span style={{ fontSize: 11, color: '#64748B' }}>Primary physical ID for forensic ELA & MRZ check</span>
-              </div>
-            </div>
+            {/* Corner Alignment Brackets (Mobile Viewfinder) */}
+            <div style={{ position: 'absolute', top: 16, left: 16, width: 24, height: 24, borderTop: '3px solid #E27396', borderLeft: '3px solid #E27396', borderTopLeftRadius: 6, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: 16, right: 16, width: 24, height: 24, borderTop: '3px solid #E27396', borderRight: '3px solid #E27396', borderTopRightRadius: 6, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: 16, left: 16, width: 24, height: 24, borderBottom: '3px solid #E27396', borderLeft: '3px solid #E27396', borderBottomLeftRadius: 6, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: 16, right: 16, width: 24, height: 24, borderBottom: '3px solid #E27396', borderRight: '3px solid #E27396', borderBottomRightRadius: 6, pointerEvents: 'none' }} />
 
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button className="btn btn-ghost" style={{ fontSize: 11.5, padding: '5px 10px' }} onClick={() => docFileRef.current?.click()}>
-                <UploadCloud size={13} color="#D4789A" /> Browse
-              </button>
-              <button className="btn btn-ghost" style={{ fontSize: 11.5, padding: '5px 10px' }} onClick={() => startCamera('doc')}>
-                <Camera size={13} color="#D4789A" /> Camera
-              </button>
-              <input ref={docFileRef} type="file" accept="image/*" onChange={handleDocFile} style={{ display: 'none' }} />
-            </div>
-          </div>
-
-          {/* Document Display / Dropzone */}
-          <div
-            onClick={() => !documentImage && docFileRef.current?.click()}
-            style={{
-              minHeight: 250,
-              borderRadius: 14,
-              background: '#FFF8FA',
-              border: '1.5px dashed #F3D0DC',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              position: 'relative', overflow: 'hidden',
-              cursor: documentImage ? 'default' : 'pointer',
-            }}
-          >
-            {cameraMode === 'doc' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: 16 }}>
-                <video ref={videoRef} autoPlay playsInline style={{ maxHeight: 200, borderRadius: 10, border: '1.5px solid #F3D0DC' }} />
-                <button className="btn btn-primary" onClick={captureCamera} style={{ fontSize: 12 }}>
-                  <Camera size={13} /> Snap Document
+            {cameraActive ? (
+              <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+                <video ref={videoRef} autoPlay playsInline style={{ maxHeight: 240, maxWidth: '100%', borderRadius: 14 }} />
+                <button
+                  onClick={captureCamera}
+                  style={{
+                    marginTop: 12,
+                    background: '#E27396',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 999,
+                    padding: '8px 20px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Snap Photo
                 </button>
               </div>
             ) : documentImage ? (
-              <>
-                <img src={documentImage} alt="Uploaded Document" style={{ maxHeight: 240, maxWidth: '100%', objectFit: 'contain', borderRadius: 10 }} />
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+                <img
+                  src={documentImage}
+                  alt="Captured Document"
+                  style={{ maxHeight: 260, maxWidth: '100%', objectFit: 'contain', borderRadius: 12 }}
+                />
                 {loading && <div className="scan-line" />}
-              </>
+              </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: 28 }}>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  textAlign: 'center',
+                  padding: 32,
+                  cursor: 'pointer',
+                  color: '#FFFFFF'
+                }}
+              >
                 <div style={{
-                  width: 48, height: 48, borderRadius: 14,
-                  background: '#FDEEF3', border: '1.5px dashed #F3D0DC',
+                  width: 52, height: 52, borderRadius: 18,
+                  background: 'rgba(226,115,150,0.18)', border: '1.5px dashed #E27396',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 10px',
+                  margin: '0 auto 12px'
                 }}>
-                  <UploadCloud size={20} color="#D4789A" />
+                  <Camera size={24} color="#E27396" />
                 </div>
-                <p style={{ fontSize: 13.5, fontWeight: 700, color: '#1E293B', marginBottom: 3 }}>
-                  Upload passport or ID document
-                </p>
-                <p style={{ fontSize: 11.5, color: '#94A3B8' }}>
-                  Click to browse from your device
-                </p>
+                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>
+                  Tap to Upload or Snap Document
+                </div>
+                <div style={{ fontSize: 11.5, color: '#A0AEC0' }}>
+                  Supports Passport, National ID, or Driver's License
+                </div>
               </div>
             )}
 
-            {/* Live Step Tracker Pill */}
+            {/* Scanning Indicator Overlay */}
             {loading && (
               <div style={{
-                position: 'absolute', bottom: 10, left: 12, right: 12,
-                background: 'rgba(255, 255, 255, 0.96)', borderRadius: 12,
-                border: '1.5px solid #F3D0DC', padding: '8px 14px',
-                display: 'flex', alignItems: 'center', gap: 8,
-                boxShadow: '0 4px 14px rgba(212,120,154,0.12)',
+                position: 'absolute', bottom: 12, left: 14, right: 14,
+                background: 'rgba(255, 255, 255, 0.94)', backdropFilter: 'blur(8px)',
+                borderRadius: 14, padding: '10px 14px',
+                display: 'flex', alignItems: 'center', gap: 10,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
               }}>
-                <Loader2 size={15} color="#D4789A" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: '#1E293B', fontWeight: 600 }}>{STEPS[step]}</span>
+                <Loader2 size={16} color="#E27396" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#1E293B' }}>{STEPS[step]}</span>
               </div>
             )}
           </div>
 
-          {/* Quick Custom Info Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F8E3EA', paddingTop: 10 }}>
-            <span style={{ fontSize: 11.5, color: '#64748B' }}>
-              {currentScenario ? `Active Scenario: ${currentScenario.title}` : 'User-Uploaded Document'}
-            </span>
+          {/* Clean Action Bar Below Viewfinder */}
+          <div style={{ display: 'flex', gap: 8 }}>
             <button
-              onClick={() => setShowMetadataEditor(prev => !prev)}
+              onClick={() => fileInputRef.current?.click()}
               style={{
-                background: 'none', border: 'none', color: '#B25779',
-                fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
+                flex: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                background: '#FFF5F8', border: '1.5px solid #F3D0DC',
+                borderRadius: 14, padding: '10px 14px',
+                fontSize: 12.5, fontWeight: 700, color: '#2E1B24',
+                cursor: 'pointer', transition: 'all 0.15s ease'
               }}
             >
-              <Edit3 size={13} /> {showMetadataEditor ? 'Hide Metadata Form' : 'Edit Document Details'}
+              <UploadCloud size={15} color="#D4789A" />
+              <span>Choose Photo</span>
             </button>
+
+            <button
+              onClick={() => startCamera('doc')}
+              style={{
+                flex: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                background: '#FFF5F8', border: '1.5px solid #F3D0DC',
+                borderRadius: 14, padding: '10px 14px',
+                fontSize: 12.5, fontWeight: 700, color: '#2E1B24',
+                cursor: 'pointer', transition: 'all 0.15s ease'
+              }}
+            >
+              <Camera size={15} color="#D4789A" />
+              <span>Open Camera</span>
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleDocFile} style={{ display: 'none' }} />
           </div>
 
-          {/* Collapsible Metadata Form */}
-          {showMetadataEditor && (
-            <div style={{
-              background: '#FFF9FB', border: '1px solid #F4D9E2', borderRadius: 12,
-              padding: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10
-            }}>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 3 }}>
-                  Holder Full Name
-                </label>
-                <input
-                  type="text"
-                  value={customMetadata?.fullName || ''}
-                  onChange={e => onCustomMetadataChange({ ...customMetadata, fullName: e.target.value.toUpperCase() })}
-                  placeholder="e.g. UZUMAKI NARUTO"
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 12 }}
-                />
+          {/* Optional Selfie / Live Photo Attachment Toggle (Single Inline Card) */}
+          <div style={{
+            background: '#FFF9FB',
+            border: '1px solid #F5D2DC',
+            borderRadius: 16,
+            padding: '12px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <User size={15} color="#D4789A" />
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1E293B' }}>
+                  Live Traveler Photo (Optional)
+                </span>
               </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 3 }}>
-                  Document Number
-                </label>
-                <input
-                  type="text"
-                  value={customMetadata?.documentNumber || ''}
-                  onChange={e => onCustomMetadataChange({ ...customMetadata, documentNumber: e.target.value.toUpperCase() })}
-                  placeholder="e.g. P74209188"
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 12 }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 3 }}>
-                  Country (3 letters)
-                </label>
-                <input
-                  type="text"
-                  maxLength={3}
-                  value={customMetadata?.country || ''}
-                  onChange={e => onCustomMetadataChange({ ...customMetadata, country: e.target.value.toUpperCase() })}
-                  placeholder="JPN / USA / IND"
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 12 }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 3 }}>
-                  Expiry Date
-                </label>
-                <input
-                  type="text"
-                  value={customMetadata?.expiryDate || ''}
-                  onChange={e => onCustomMetadataChange({ ...customMetadata, expiryDate: e.target.value })}
-                  placeholder="2032-12-31"
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 12 }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 2. Live Traveler Photo / Signature Acquisition Box */}
-        <div className="card" style={{ padding: 20, background: '#FFFFFF', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <User size={18} color="#D4789A" />
-              <div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1E293B', margin: 0 }}>
-                  2. Live Traveler Photo / Signature
-                </h3>
-                <span style={{ fontSize: 11, color: '#64748B' }}>Biometric asset for 1:1 facial verification</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button className="btn btn-ghost" style={{ fontSize: 11.5, padding: '5px 10px' }} onClick={() => liveFileRef.current?.click()}>
-                <UploadCloud size={13} color="#D4789A" /> Browse
+              
+              <button
+                onClick={() => setShowSelfieBox(prev => !prev)}
+                style={{
+                  background: 'none', border: 'none', color: '#B25779',
+                  fontSize: 11.5, fontWeight: 700, cursor: 'pointer'
+                }}
+              >
+                {showSelfieBox ? 'Hide' : (liveFaceImage ? 'Change Photo' : '+ Attach Selfie')}
               </button>
-              <button className="btn btn-ghost" style={{ fontSize: 11.5, padding: '5px 10px' }} onClick={() => startCamera('face')}>
-                <Camera size={13} color="#D4789A" /> Selfie
-              </button>
-              <input ref={liveFileRef} type="file" accept="image/*" onChange={handleLiveFile} style={{ display: 'none' }} />
             </div>
-          </div>
 
-          {/* Traveler Face / Signature Display */}
-          <div
-            onClick={() => !liveFaceImage && liveFileRef.current?.click()}
-            style={{
-              minHeight: 250,
-              borderRadius: 14,
-              background: '#FFF8FA',
-              border: '1.5px dashed #F3D0DC',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              position: 'relative', overflow: 'hidden',
-              cursor: liveFaceImage ? 'default' : 'pointer',
-            }}
-          >
-            {cameraMode === 'face' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: 16 }}>
-                <video ref={videoRef} autoPlay playsInline style={{ maxHeight: 200, borderRadius: 10, border: '1.5px solid #F3D0DC' }} />
-                <button className="btn btn-primary" onClick={captureCamera} style={{ fontSize: 12 }}>
-                  <Camera size={13} /> Snap Selfie
+            {liveFaceImage && !showSelfieBox && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#EDF7EE', padding: '6px 12px', borderRadius: 10 }}>
+                <span style={{ fontSize: 11.5, fontWeight: 600, color: '#2E6B39', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <CheckCircle2 size={13} /> Photo ready for 1:1 face match
+                </span>
+                <button onClick={() => onLiveFaceChange(null)} style={{ background: 'none', border: 'none', color: '#D14966', fontSize: 11, cursor: 'pointer' }}>
+                  Remove
                 </button>
               </div>
-            ) : liveFaceImage ? (
-              <div style={{ position: 'relative', textAlign: 'center', width: '100%', height: '100%', padding: 12 }}>
-                <img src={liveFaceImage} alt="Traveler Face" style={{ maxHeight: 230, maxWidth: '100%', objectFit: 'contain', borderRadius: 10 }} />
-                <div style={{
-                  position: 'absolute', top: 18, right: 18,
-                  background: 'rgba(56, 161, 105, 0.95)', color: '#fff',
-                  borderRadius: 999, padding: '3px 10px', fontSize: 10.5, fontWeight: 700
-                }}>
-                  Live Asset Attached
-                </div>
+            )}
+
+            {showSelfieBox && (
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <button
+                  onClick={() => selfieFileRef.current?.click()}
+                  style={{
+                    flex: 1, padding: '7px 10px', borderRadius: 10,
+                    background: '#FFFFFF', border: '1px solid #E2E8F0',
+                    fontSize: 11.5, fontWeight: 600, color: '#475569', cursor: 'pointer'
+                  }}
+                >
+                  Upload Selfie
+                </button>
+                <button
+                  onClick={() => startCamera('selfie')}
+                  style={{
+                    flex: 1, padding: '7px 10px', borderRadius: 10,
+                    background: '#FFFFFF', border: '1px solid #E2E8F0',
+                    fontSize: 11.5, fontWeight: 600, color: '#475569', cursor: 'pointer'
+                  }}
+                >
+                  Take Selfie
+                </button>
+                <input ref={selfieFileRef} type="file" accept="image/*" onChange={handleSelfieFile} style={{ display: 'none' }} />
               </div>
+            )}
+          </div>
+
+          {/* Primary Full-Width Bottom CTA Button */}
+          <button
+            disabled={!documentImage || loading}
+            onClick={onRunInspection}
+            style={{
+              width: '100%',
+              padding: '14px 20px',
+              borderRadius: 18,
+              border: 'none',
+              background: documentImage && !loading
+                ? 'linear-gradient(135deg, #E27396, #B25779)'
+                : '#E2E8F0',
+              color: documentImage && !loading ? '#FFFFFF' : '#94A3B8',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: documentImage && !loading ? 'pointer' : 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              boxShadow: documentImage && !loading ? '0 6px 20px rgba(226,115,150,0.36)' : 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {loading ? (
+              <>
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                Verifying Document...
+              </>
             ) : (
-              <div style={{ textAlign: 'center', padding: 28 }}>
-                <div style={{
-                  width: 48, height: 48, borderRadius: 14,
-                  background: '#FDEEF3', border: '1.5px dashed #F3D0DC',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 10px',
-                }}>
-                  <UserCheck size={20} color="#D4789A" />
-                </div>
-                <p style={{ fontSize: 13.5, fontWeight: 700, color: '#1E293B', marginBottom: 3 }}>
-                  Upload passenger photo or signature
-                </p>
-                <p style={{ fontSize: 11.5, color: '#94A3B8' }}>
-                  Used to verify against passport crop
-                </p>
-              </div>
+              <>
+                <ShieldCheck size={18} />
+                Verify Document
+                <ChevronRight size={16} />
+              </>
             )}
-          </div>
+          </button>
 
-          {/* Biometric Pairing Badge */}
-          <div style={{
-            padding: '10px 14px', borderRadius: 12,
-            background: liveFaceImage && documentImage ? '#EDF7EE' : '#FFF9FB',
-            border: `1px solid ${liveFaceImage && documentImage ? '#BCE3C1' : '#F4D9E2'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <CheckCircle2 size={15} color={liveFaceImage && documentImage ? '#38A169' : '#94A3B8'} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: liveFaceImage && documentImage ? '#2E6B39' : '#64748B' }}>
-                {liveFaceImage && documentImage
-                  ? 'Dual Biometric Assets Ready for Matching'
-                  : 'Document uploaded; traveler photo optional'}
-              </span>
-            </div>
-            {liveFaceImage && (
-              <button
-                onClick={() => onLiveFaceChange(null)}
-                style={{ background: 'none', border: 'none', color: '#B0334E', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}
-              >
-                Clear
-              </button>
-            )}
-          </div>
         </div>
 
-      </div>
-
-      {/* ── Action Verification Bar ── */}
-      <div style={{
-        background: '#FFFFFF', border: '1.5px solid #F4D9E2', borderRadius: 18,
-        padding: '16px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        boxShadow: '0 4px 14px rgba(212,120,154,0.06)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10, background: '#FDEEF3',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <ShieldCheck size={18} color="#D4789A" />
-          </div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1E293B' }}>
-              Autonomous Forensic & Biometric Screening
-            </div>
-            <div style={{ fontSize: 11.5, color: '#64748B' }}>
-              Executes Error Level Analysis, FFT Moiré, ICAO checksum validation, and facial vector cosine comparison.
-            </div>
-          </div>
-        </div>
-
-        <button
-          className="btn btn-primary"
-          disabled={!documentImage || loading}
-          onClick={onRunInspection}
-          style={{ padding: '12px 36px', fontSize: 14, borderRadius: 14 }}
-        >
-          {loading ? (
-            <>
-              <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-              Executing Forensic Inference...
-            </>
-          ) : (
-            <>
-              <ShieldCheck size={16} />
-              Run Full Verification
-            </>
-          )}
-        </button>
       </div>
 
     </div>
