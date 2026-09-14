@@ -3,7 +3,7 @@ import { Shield, ChevronDown, Check, Sparkles, User, LogOut } from 'lucide-react
 
 export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [officerName, setOfficerName] = useState('Uzumaki Naruto');
+  const [officerName, setOfficerName] = useState('Tanjiro Kamado');
   const [isOnline, setIsOnline] = useState(true);
 
   return (
@@ -25,7 +25,7 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{
           width: 38, height: 38, borderRadius: 12,
-          background: 'linear-gradient(135deg, #E27396, #B25779)',
+          background: 'linear-gradient(135deg, #E27396, #8C3A5E)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 3px 10px rgba(212,120,154,0.32)',
           flexShrink: 0,
@@ -41,7 +41,7 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
             color: '#2E1B24',
             letterSpacing: '-0.01em',
           }}>
-            Aegis
+            Sukitōru
           </span>
           <span style={{
             fontSize: 12,
@@ -51,7 +51,7 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
             fontFamily: '"Caveat", cursive',
             letterSpacing: '0.02em',
           }}>
-            passport verification
+            透き通る世界 • see-through screening
           </span>
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' })
                 {officerName}
               </div>
               <div style={{ fontSize: 11, color: '#846271', marginTop: 2 }}>
-                Officer ID: #KONOHA-742
+                Officer ID: #HASHIRA-01 • Corps Division
               </div>
             </div>
 

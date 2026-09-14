@@ -2,13 +2,13 @@ import React from 'react';
 import { Scan, Microscope, CreditCard, Users, AlertCircle, BarChart2, ClipboardList } from 'lucide-react';
 
 const TABS = [
-  { id: 'scanner',    label: 'Document Check',    sub: 'Scan & verify',         Icon: Scan },
-  { id: 'forensics',  label: 'Edited Photos',     sub: 'Find hidden changes',   Icon: Microscope },
-  { id: 'mrz',        label: 'Security Line',     sub: 'Passport code check',   Icon: CreditCard },
-  { id: 'biometrics', label: 'Face Match',        sub: 'Photo vs live traveler',Icon: Users },
-  { id: 'watchlist',  label: 'Alert List',        sub: 'Lost & stolen IDs',     Icon: AlertCircle },
-  { id: 'analytics',  label: 'Daily Summary',     sub: 'Pass & alert stats',    Icon: BarChart2 },
-  { id: 'audit',      label: 'History & Log',     sub: 'Inspection receipts',   Icon: ClipboardList },
+  { id: 'scanner',    label: '1. Scan Document',   sub: 'Upload or select ID',      Icon: Scan },
+  { id: 'mrz',        label: '2. MRZ Validation',  sub: 'ICAO check-digit math',    Icon: CreditCard },
+  { id: 'forensics',  label: '3. Tamper Detection',sub: 'Splicing & forgery scan',  Icon: Microscope },
+  { id: 'biometrics', label: '4. Face Match',      sub: 'Photo vs live traveler',   Icon: Users },
+  { id: 'watchlist',  label: '5. Watchlist Check', sub: 'Blacklist & Interpol',     Icon: AlertCircle },
+  { id: 'analytics',  label: 'Analytics',          sub: 'Checkpoint stats',         Icon: BarChart2 },
+  { id: 'audit',      label: 'Audit Trail',        sub: 'Blockchain ledger & log',  Icon: ClipboardList },
 ];
 
 export default function Sidebar({ activeTab, onSelectTab }) {

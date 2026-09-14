@@ -85,30 +85,29 @@ export default function DocumentScanner({ documentImage, onDocumentChange, onRun
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
-          {PRESET_SCENARIOS.map(scenario => {
-            const theme = SCENARIO_THEMES[scenario.expectedVerdict] || SCENARIO_THEMES['VERIFIED'];
+          {PRESET_SCENARIOS.map((scenario, index) => {
             const active = currentScenario?.id === scenario.id;
             return (
               <button
                 key={scenario.id}
                 onClick={() => onDocumentChange(scenario.documentImage, scenario)}
                 style={{
-                  background: active ? theme.bg : '#FFFDFD',
-                  border: `1.5px solid ${active ? theme.border : '#F7DFE6'}`,
+                  background: active ? '#FDEEF3' : '#FFFDFD',
+                  border: `1.5px solid ${active ? '#E27396' : '#F7DFE6'}`,
                   borderRadius: 16,
                   padding: '12px 14px',
                   cursor: 'pointer',
                   textAlign: 'left',
                   transition: 'all 0.18s ease',
-                  boxShadow: active ? `0 4px 14px ${theme.border}` : '0 1px 4px rgba(212,120,154,0.04)',
+                  boxShadow: active ? '0 4px 14px rgba(226,115,150,0.18)' : '0 1px 4px rgba(212,120,154,0.04)',
                 }}
                 onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#FFF4F7'; }}
                 onMouseLeave={e => { if (!active) e.currentTarget.style.background = '#FFFDFD'; }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: theme.dot, flexShrink: 0 }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: theme.text, textTransform: 'uppercase' }}>
-                    {theme.badge}
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: active ? '#E27396' : '#D4789A', flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#B25779', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Sample {index + 1}
                   </span>
                 </div>
                 <div style={{
