@@ -12,7 +12,7 @@ import CheckpointAnalytics from './components/analytics/CheckpointAnalytics';
 import AuditAndBlockchainLedger from './components/audit/AuditAndBlockchainLedger';
 
 import { PRESET_SCENARIOS } from './data/presetSamples';
-import { runFullInspection } from './api/client';
+import { runFullInspection, checkHealth } from './api/client';
 import { useEffect } from 'react';
 
 export default function App() {
@@ -22,12 +22,18 @@ export default function App() {
   const [liveFaceImage, setLiveFaceImage] = useState(null);
   const [currentScenario, setCurrentScenario] = useState(null);
   const [result, setResult] = useState(null);
+  const [engineMode, setEngineMode] = useState('LIVE_BACKEND');
 
   useEffect(() => {
     const s = PRESET_SCENARIOS[0];
     setDocumentImage(s.documentImage);
     setLiveFaceImage(s.liveFace);
     setCurrentScenario(s);
+
+    // Initial backend liveness check
+    checkHealth()
+      .then(() => setEngineMode('LIVE_BACKEND'))
+      .catch(() => setEngineMode('DEMO_SCENARIO'));
   }, []);
 
   const handleDocumentChange = (imgB64, scenario = null) => {
@@ -48,7 +54,9 @@ export default function App() {
         checkpoint_id: 'BOMBAY-INTL-T2-E4'
       });
       setResult(res);
+      setEngineMode('LIVE_BACKEND');
     } catch {
+      setEngineMode('DEMO_SCENARIO');
       // Rich scenario-aware fallback
       const id = currentScenario?.id || '';
       if (id === 'tampered_expiry_ela') {
@@ -104,7 +112,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#FFF8FA' }}>
-      <Navbar />
+      <Navbar engineMode={engineMode} />
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         <Sidebar activeTab={activeTab} onSelectTab={setActiveTab} />
         <main style={{ flex: 1, padding: '24px', overflowY: 'auto', maxWidth: 1280, margin: '0 auto', width: '100%' }}>

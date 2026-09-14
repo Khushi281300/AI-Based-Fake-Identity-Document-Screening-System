@@ -177,6 +177,83 @@ def parse_mrz_td1(line1: str, line2: str, line3: str) -> Dict[str, Any]:
         "raw_mrz": [line1, line2, line3]
     }
 
+def parse_mrz_td2(line1: str, line2: str) -> Dict[str, Any]:
+    """
+    Parses ICAO Doc 9303 TD2 (Visa / Official Travel Doc - 2 lines of 36 characters).
+    Line 1: V<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<
+    Line 2: L898902C36UTO7408122F1204159<<<<<<<0
+    """
+    line1 = sanitize_mrz_line(line1).ljust(36, '<')[:36]
+    line2 = sanitize_mrz_line(line2).ljust(36, '<')[:36]
+
+    doc_code = line1[0:2]
+    issuing_country = line1[2:5].replace('<', '')
+    
+    # Names parsing
+    names_part = line1[5:36]
+    name_split = names_part.split('<<')
+    surname = name_split[0].replace('<', ' ').strip()
+    given_names = name_split[1].replace('<', ' ').strip() if len(name_split) > 1 else ""
+
+    # Line 2 components
+    doc_number = line2[0:9].replace('<', '')
+    doc_num_check = line2[9]
+    nationality = line2[10:13].replace('<', '')
+    
+    dob_raw = line2[13:19]
+    dob_check = line2[19]
+    
+    sex = line2[20].replace('<', 'X')
+    
+    expiry_raw = line2[21:27]
+    expiry_check = line2[27]
+    
+    optional_data = line2[28:35]
+    composite_check = line2[35]
+
+    # Validate Check Digits
+    doc_num_calc = calculate_check_digit(line2[0:9])
+    dob_calc = calculate_check_digit(dob_raw)
+    expiry_calc = calculate_check_digit(expiry_raw)
+    
+    # Composite data string: line2[0:10] + line2[13:20] + line2[21:35]
+    composite_data = line2[0:10] + line2[13:20] + line2[21:35]
+    composite_calc = calculate_check_digit(composite_data)
+
+    doc_num_valid = str(doc_num_calc) == doc_num_check
+    dob_valid = str(dob_calc) == dob_check
+    expiry_valid = str(expiry_calc) == expiry_check
+    composite_valid = str(composite_calc) == composite_check
+
+    all_valid = doc_num_valid and dob_valid and expiry_valid and composite_valid
+
+    dob_formatted = f"19{dob_raw[0:2]}-{dob_raw[2:4]}-{dob_raw[4:6]}" if int(dob_raw[0:2]) > 30 else f"20{dob_raw[0:2]}-{dob_raw[2:4]}-{dob_raw[4:6]}"
+    expiry_formatted = f"20{expiry_raw[0:2]}-{expiry_raw[2:4]}-{expiry_raw[4:6]}"
+
+    doc_type = "VISA" if doc_code.startswith("V") else "OFFICIAL_TRAVEL_DOC_TD2"
+
+    return {
+        "format": "TD2",
+        "doc_type": doc_type,
+        "issuing_country": issuing_country,
+        "surname": surname,
+        "given_names": given_names,
+        "full_name": f"{given_names} {surname}".strip(),
+        "document_number": doc_number,
+        "nationality": nationality,
+        "date_of_birth": dob_formatted,
+        "expiry_date": expiry_formatted,
+        "sex": sex,
+        "check_digits": {
+            "document_number": {"expected": doc_num_check, "calculated": str(doc_num_calc), "valid": doc_num_valid},
+            "date_of_birth": {"expected": dob_check, "calculated": str(dob_calc), "valid": dob_valid},
+            "expiry_date": {"expected": expiry_check, "calculated": str(expiry_calc), "valid": expiry_valid},
+            "composite": {"expected": composite_check, "calculated": str(composite_calc), "valid": composite_valid}
+        },
+        "all_check_digits_valid": all_valid,
+        "raw_mrz": [line1, line2]
+    }
+
 def parse_mrz_text(mrz_lines: List[str]) -> Dict[str, Any]:
     """
     Auto-detects MRZ format (TD1, TD2, TD3) and executes full ICAO validation.
@@ -184,11 +261,22 @@ def parse_mrz_text(mrz_lines: List[str]) -> Dict[str, Any]:
     cleaned = [sanitize_mrz_line(l) for l in mrz_lines if sanitize_mrz_line(l)]
     
     if len(cleaned) == 2:
-        return parse_mrz_td3(cleaned[0], cleaned[1])
+        max_len = max(len(cleaned[0]), len(cleaned[1]))
+        if max_len <= 38:
+            return parse_mrz_td2(cleaned[0], cleaned[1])
+        elif max_len >= 40:
+            return parse_mrz_td3(cleaned[0], cleaned[1])
+        else:
+            return {
+                "format": "INVALID_LENGTH",
+                "doc_type": "UNKNOWN",
+                "all_check_digits_valid": False,
+                "error": f"Invalid MRZ line length ({max_len} chars). TD2 expects 36 chars, TD3 expects 44 chars.",
+                "raw_mrz": mrz_lines
+            }
     elif len(cleaned) == 3:
         return parse_mrz_td1(cleaned[0], cleaned[1], cleaned[2])
     else:
-        # Fallback empty structure
         return {
             "format": "UNKNOWN",
             "doc_type": "UNKNOWN",

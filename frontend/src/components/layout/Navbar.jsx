@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, ChevronDown, Check, Sparkles, User, LogOut } from 'lucide-react';
 
-export default function Navbar() {
+export default function Navbar({ engineMode = 'LIVE_BACKEND', backendUrl = '' }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [officerName, setOfficerName] = useState('Uzumaki Naruto');
   const [isOnline, setIsOnline] = useState(true);
@@ -56,24 +56,48 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Simple Clean Steps Pill */}
-      <div style={{
-        background: '#FFF4F7',
-        border: '1.5px solid #F5D2DC',
-        borderRadius: 999,
-        padding: '5px 18px',
-        fontSize: 12,
-        color: '#846271',
-        fontWeight: 600,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-      }}>
-        <span style={{ color: '#D4789A', fontWeight: 700 }}>1. Choose</span>
-        <span style={{ color: '#E8C5D2' }}>›</span>
-        <span>2. Check</span>
-        <span style={{ color: '#E8C5D2' }}>›</span>
-        <span>3. Result</span>
+      {/* Real-time Engine Status Badge */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{
+          background: engineMode === 'LIVE_BACKEND' ? '#EDF7EE' : '#F7F0FA',
+          border: `1.5px solid ${engineMode === 'LIVE_BACKEND' ? '#BCE3C1' : '#E2CEF0'}`,
+          borderRadius: 999,
+          padding: '5px 14px',
+          fontSize: 12,
+          color: engineMode === 'LIVE_BACKEND' ? '#2E6B39' : '#6A3587',
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 7,
+          boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+        }}>
+          <span style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: engineMode === 'LIVE_BACKEND' ? '#38A169' : '#9B51E0',
+            boxShadow: engineMode === 'LIVE_BACKEND' ? '0 0 8px #38A169' : 'none'
+          }} />
+          <span>{engineMode === 'LIVE_BACKEND' ? 'LIVE ENGINE: ACTIVE' : 'SCENARIO DEMO MODE'}</span>
+        </div>
+
+        {/* Step Guide */}
+        <div style={{
+          background: '#FFF4F7',
+          border: '1.5px solid #F5D2DC',
+          borderRadius: 999,
+          padding: '5px 16px',
+          fontSize: 12,
+          color: '#846271',
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <span style={{ color: '#D4789A', fontWeight: 700 }}>1. Choose</span>
+          <span style={{ color: '#E8C5D2' }}>›</span>
+          <span>2. Check</span>
+          <span style={{ color: '#E8C5D2' }}>›</span>
+          <span>3. Result</span>
+        </div>
       </div>
 
       {/* Working Profile Section for "Uzumaki Naruto" */}
