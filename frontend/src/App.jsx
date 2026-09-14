@@ -34,11 +34,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    const s = PRESET_SCENARIOS[0];
-    setDocumentImage(s.documentImage);
-    setLiveFaceImage(s.liveFace);
-    setCurrentScenario(s);
-
+    // Start with a clean slate ready for custom user uploads
     // Initial backend liveness check
     checkHealth()
       .then(() => setEngineMode('LIVE_BACKEND'))
@@ -191,7 +187,9 @@ export default function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               <DocumentScanner
                 documentImage={documentImage}
+                liveFaceImage={liveFaceImage}
                 onDocumentChange={handleDocumentChange}
+                onLiveFaceChange={setLiveFaceImage}
                 onRunInspection={handleRunInspection}
                 loading={loading}
                 qualityData={result?.quality}
