@@ -60,6 +60,11 @@ export const addToWatchlist = async (payload) => {
   return response.data;
 };
 
+export const removeFromWatchlist = async (documentNumber) => {
+  const response = await apiClient.delete(`/blacklist/watchlist/${documentNumber}`);
+  return response.data;
+};
+
 export const getCheckpointAnalytics = async () => {
   const response = await apiClient.get('/analytics/checkpoint/metrics');
   return response.data;

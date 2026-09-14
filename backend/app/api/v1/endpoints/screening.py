@@ -144,14 +144,20 @@ async def run_full_document_inspection(req: FullInspectionRequest, db: Session =
 
         # 6. Database & Blacklist Check
         doc_num = mrz_res.get("document_number", "UNKNOWN")
+        holder_name = mrz_res.get("full_name", "UNKNOWN")
+        from sqlalchemy import or_
         blacklist_hit = db.query(BlacklistEntry).filter(
-            BlacklistEntry.document_number == doc_num.upper(),
+            or_(
+                BlacklistEntry.document_number == doc_num.upper(),
+                BlacklistEntry.holder_name == holder_name.upper()
+            ),
             BlacklistEntry.active == True
         ).first()
 
         database_check = {
             "is_blacklisted": blacklist_hit is not None,
             "blacklist_reason": blacklist_hit.reason if blacklist_hit else None,
+            "severity": blacklist_hit.severity if blacklist_hit else None,
             "duplicate_identities": filtered_duplicates
         }
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, Camera, Loader2, Sparkles, CheckCircle2, RefreshCw, Smartphone, ChevronRight, ShieldCheck, User } from 'lucide-react';
+import { UploadCloud, Camera, Loader2, Sparkles, CheckCircle2, RefreshCw, Smartphone, ChevronRight, ShieldCheck, User, ShieldAlert, Edit3 } from 'lucide-react';
 import { PRESET_SCENARIOS } from '../../data/presetSamples';
 
 const STEPS = [
@@ -18,6 +18,10 @@ export default function DocumentScanner({
   onRunInspection,
   loading,
   currentScenario,
+  customMetadata = {},
+  onCustomMetadataChange,
+  isBlacklisted = false,
+  onToggleWatchlist
 }) {
   const fileInputRef  = useRef(null);
   const selfieFileRef = useRef(null);
@@ -26,6 +30,7 @@ export default function DocumentScanner({
   const [cameraTarget, setCameraTarget] = useState('doc'); // 'doc' or 'selfie'
   const [step, setStep]                 = useState(0);
   const [showSelfieBox, setShowSelfieBox] = useState(false);
+  const [showMetaBox, setShowMetaBox]     = useState(false);
 
   useEffect(() => {
     if (!loading) return;
@@ -375,6 +380,127 @@ export default function DocumentScanner({
                   Take Selfie
                 </button>
                 <input ref={selfieFileRef} type="file" accept="image/*" onChange={handleSelfieFile} style={{ display: 'none' }} />
+              </div>
+            )}
+          </div>
+
+          {/* Watchlist Cross-Check & Simulation Card */}
+          <div style={{
+            background: isBlacklisted ? '#FEF1F3' : '#F0F8F3',
+            border: `1.5px solid ${isBlacklisted ? '#F8BAC7' : '#BCDCC7'}`,
+            borderRadius: 16,
+            padding: '12px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            transition: 'all 0.2s ease'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ShieldAlert size={16} color={isBlacklisted ? '#D14966' : '#4A8C5C'} />
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: isBlacklisted ? '#96243C' : '#2B5A37' }}>
+                  {isBlacklisted ? 'Watchlist Hit Flagged (Active Alert)' : 'Watchlist Check: Passed (Clean)'}
+                </span>
+              </div>
+
+              {onToggleWatchlist && (
+                <button
+                  type="button"
+                  onClick={onToggleWatchlist}
+                  style={{
+                    background: isBlacklisted ? '#FFFFFF' : '#FFFFFF',
+                    border: `1px solid ${isBlacklisted ? '#D14966' : '#4A8C5C'}`,
+                    color: isBlacklisted ? '#D14966' : '#2B5A37',
+                    borderRadius: 12,
+                    padding: '4px 10px',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {isBlacklisted ? '✓ Clear Alert' : '⚡ Simulate Watchlist Hit'}
+                </button>
+              )}
+            </div>
+
+            <div style={{ fontSize: 11, color: isBlacklisted ? '#B25779' : '#4A8C5C' }}>
+              {isBlacklisted
+                ? 'Document or name matches high-risk Interpol / travel ban database.'
+                : 'Scanned document is clean. Not flagged on Interpol SLTD or national blacklist.'}
+            </div>
+          </div>
+
+          {/* Document & Traveler Metadata Drawer (Collapsible) */}
+          <div style={{
+            background: '#FFF9FB',
+            border: '1px solid #F5D2DC',
+            borderRadius: 16,
+            padding: '10px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <Edit3 size={14} color="#D4789A" />
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  Doc: <strong>{customMetadata?.documentNumber || 'P74209188'}</strong> • {customMetadata?.fullName || 'UZUMAKI NARUTO'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMetaBox(prev => !prev)}
+                style={{
+                  background: 'none', border: 'none', color: '#B25779',
+                  fontSize: 11.5, fontWeight: 700, cursor: 'pointer', flexShrink: 0
+                }}
+              >
+                {showMetaBox ? 'Done' : 'Edit Info'}
+              </button>
+            </div>
+
+            {showMetaBox && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4, paddingTop: 8, borderTop: '1px dashed #F5D2DC' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div>
+                    <label style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 2 }}>
+                      Document Number
+                    </label>
+                    <input
+                      type="text"
+                      value={customMetadata?.documentNumber || ''}
+                      onChange={e => onCustomMetadataChange && onCustomMetadataChange({ ...customMetadata, documentNumber: e.target.value.toUpperCase() })}
+                      style={{ fontSize: 12, padding: '6px 10px', width: '100%', borderRadius: 8, border: '1px solid #CBD5E1' }}
+                      placeholder="e.g. P74209188"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 2 }}>
+                      Country Code
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={3}
+                      value={customMetadata?.country || ''}
+                      onChange={e => onCustomMetadataChange && onCustomMetadataChange({ ...customMetadata, country: e.target.value.toUpperCase() })}
+                      style={{ fontSize: 12, padding: '6px 10px', width: '100%', borderRadius: 8, border: '1px solid #CBD5E1' }}
+                      placeholder="JPN"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 2 }}>
+                    Holder Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={customMetadata?.fullName || ''}
+                    onChange={e => onCustomMetadataChange && onCustomMetadataChange({ ...customMetadata, fullName: e.target.value.toUpperCase() })}
+                    style={{ fontSize: 12, padding: '6px 10px', width: '100%', borderRadius: 8, border: '1px solid #CBD5E1' }}
+                    placeholder="SURNAME GIVEN"
+                  />
+                </div>
               </div>
             )}
           </div>

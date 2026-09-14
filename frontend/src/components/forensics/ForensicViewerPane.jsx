@@ -73,7 +73,7 @@ export default function ForensicViewerPane({ inspectionResult, originalImage }) 
       </div>
 
       {/* Side-by-side comparison */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div className="grid-responsive-2col" style={{ gap: 14 }}>
         {[
           { label: 'Original Photo', img: originalImage, tag: 'Reference' },
           { label: activeLayer.name, img: activeImage,   tag: isFlagged(activeLayer) ? 'Tampered' : 'Clean' },

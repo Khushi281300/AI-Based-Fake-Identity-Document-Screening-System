@@ -43,6 +43,7 @@ export default function RiskScoreCard({ riskEvaluation, onViewAudit }) {
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 18,
+        flexWrap: 'wrap',
         boxShadow: '0 2px 10px rgba(212,120,154,0.05)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
