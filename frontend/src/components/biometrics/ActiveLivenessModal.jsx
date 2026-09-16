@@ -151,10 +151,13 @@ export default function ActiveLivenessModal({ onClose, onComplete, onCapture }) 
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between">
-          <span className="text-[11px] font-mono text-slate-400">
-            ISO/IEC 30107-3 Biometric PAD Compliant
-          </span>
+        <div className="p-4 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between gap-2 flex-wrap">
+          <button
+            onClick={handleCaptureAndFinalize}
+            className="px-3 py-1.5 rounded-xl border border-cyan-600/50 hover:bg-cyan-950/40 text-cyan-300 font-semibold text-xs transition"
+          >
+            📸 Direct Snapshot
+          </button>
 
           {isSuccess ? (
             <button

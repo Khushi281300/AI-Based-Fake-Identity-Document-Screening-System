@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 
 const CHECKS = [
   { key: 'document_quality',       name: 'Photo Quality',        weight: '10%', what: 'Checks if the document photo is clear, sharp, and easy to read.' },
@@ -37,7 +37,12 @@ export default function ExplainabilityChecklist({ factorBreakdown }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {CHECKS.map(item => {
           const factor = factors[item.key] || { score: 90, status: 'PASS' };
-          const ok = factor.status === 'PASS' || factor.score >= 70;
+          const isPending = factor.status === 'PENDING' || (item.key === 'biometric_verification' && (factor.status === 'WARN' || factor.score === 70 || factor.score === 0));
+          const ok = factor.status === 'PASS' || (!isPending && factor.score >= 75);
+          const statusColor = isPending ? '#B66D26' : ok ? '#4A8C5C' : '#D14966';
+          const statusText  = isPending ? 'Pending Camera' : ok ? 'Passed' : 'Failed';
+          const scoreText   = isPending ? '--' : factor.score;
+
           return (
             <div
               key={item.key}
@@ -47,13 +52,15 @@ export default function ExplainabilityChecklist({ factorBreakdown }) {
                 gap: 16,
                 padding: '12px 16px',
                 borderRadius: 16,
-                background: ok ? '#FFFDFD' : '#FEF1F3',
-                border: `1.5px solid ${ok ? '#F7DFE6' : '#F8BAC7'}`,
+                background: isPending ? '#FFF9F2' : ok ? '#FFFDFD' : '#FEF1F3',
+                border: `1.5px solid ${isPending ? '#F8D6B0' : ok ? '#F7DFE6' : '#F8BAC7'}`,
                 transition: 'all 0.15s ease',
               }}
             >
               <div style={{ flexShrink: 0 }}>
-                {ok ? (
+                {isPending ? (
+                  <AlertCircle size={22} color="#B66D26" />
+                ) : ok ? (
                   <CheckCircle2 size={22} color="#4A8C5C" />
                 ) : (
                   <XCircle size={22} color="#D14966" />
@@ -79,17 +86,17 @@ export default function ExplainabilityChecklist({ factorBreakdown }) {
                   fontSize: 18,
                   fontWeight: 800,
                   fontFamily: '"JetBrains Mono", monospace',
-                  color: ok ? '#4A8C5C' : '#D14966',
+                  color: statusColor,
                 }}>
-                  {factor.score}
+                  {scoreText}
                 </div>
                 <div style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: ok ? '#4A8C5C' : '#D14966',
+                  color: statusColor,
                   textTransform: 'uppercase',
                 }}>
-                  {ok ? 'Passed' : 'Failed'}
+                  {statusText}
                 </div>
               </div>
             </div>

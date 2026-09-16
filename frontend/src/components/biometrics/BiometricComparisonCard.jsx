@@ -9,8 +9,39 @@ export default function BiometricComparisonCard({ docFaceCrop, liveFaceImage, bi
   const [comparing, setComparing] = useState(false);
 
   useEffect(() => {
-    if (biometricResult) setLocalMatch(biometricResult);
+    if (biometricResult && biometricResult.verdict !== 'PENDING_CAPTURE') {
+      setLocalMatch(biometricResult);
+    }
   }, [biometricResult]);
+
+  // Whenever liveFaceImage and docFaceCrop are both present, automatically compare
+  useEffect(() => {
+    if (docFaceCrop && liveFaceImage) {
+      let isMounted = true;
+      setComparing(true);
+      compareFaces({
+        document_image_base64: docFaceCrop,
+        live_face_base64: liveFaceImage
+      })
+        .then(res => {
+          if (isMounted && res?.match) {
+            setLocalMatch({
+              verdict: res.match.verdict,
+              similarity_percentage: res.match.similarity_percentage,
+              cosine_similarity: res.match.cosine_similarity,
+              liveness_score: res.passive_liveness?.liveness_score || 92,
+              is_live: res.passive_liveness?.is_live ?? true,
+              spoof_classification: res.passive_liveness?.spoof_classification || 'REAL_HUMAN'
+            });
+          }
+        })
+        .catch(err => console.warn('Auto-compare error:', err))
+        .finally(() => {
+          if (isMounted) setComparing(false);
+        });
+      return () => { isMounted = false; };
+    }
+  }, [docFaceCrop, liveFaceImage]);
 
   const hasLiveFace = Boolean(liveFaceImage || localMatch);
   const match  = localMatch || biometricResult;
