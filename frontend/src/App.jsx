@@ -187,7 +187,8 @@ export default function App() {
       });
       setResult(res);
       setEngineMode('LIVE_BACKEND');
-    } catch {
+    } catch (err) {
+      console.warn('Live backend inspection failed or unreachable, using scenario data:', err);
       setEngineMode('DEMO_SCENARIO');
       const id = currentScenario?.id || '';
 
