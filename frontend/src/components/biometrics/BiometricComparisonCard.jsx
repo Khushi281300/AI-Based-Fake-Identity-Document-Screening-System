@@ -12,13 +12,21 @@ export default function BiometricComparisonCard({ docFaceCrop, liveFaceImage, bi
     if (biometricResult) setLocalMatch(biometricResult);
   }, [biometricResult]);
 
-  const match  = localMatch || biometricResult || { verdict: 'MATCH', similarity_percentage: 95, cosine_similarity: 0.95, liveness_score: 97, is_live: true, spoof_classification: 'REAL_HUMAN' };
-  const pct    = match.similarity_percentage || 95;
-  const isMatch = match.verdict === 'MATCH';
-  const isBorder = match.verdict === 'BORDERLINE';
+  const hasLiveFace = Boolean(liveFaceImage || localMatch);
+  const match  = localMatch || biometricResult;
+  const hasScore = hasLiveFace && match && match.similarity_percentage !== null && match.similarity_percentage !== undefined && match.verdict !== 'PENDING_CAPTURE';
+  const pct    = hasScore ? match.similarity_percentage : null;
+  const isMatch = match?.verdict === 'MATCH';
+  const isBorder = match?.verdict === 'BORDERLINE';
 
-  const color = isMatch ? '#4A8C5C' : isBorder ? '#B66D26' : '#D14966';
-  const label = isMatch ? 'Faces Match' : isBorder ? 'Needs Officer Check' : 'Faces Do Not Match';
+  const color = !hasScore ? '#846271' : isMatch ? '#4A8C5C' : isBorder ? '#B66D26' : '#D14966';
+  const label = !hasScore 
+    ? (comparing ? 'Comparing...' : 'Awaiting Camera') 
+    : isMatch 
+    ? 'Faces Match' 
+    : isBorder 
+    ? 'Needs Officer Check' 
+    : 'Faces Do Not Match';
 
   const handleCaptureComplete = async (b64) => {
     if (onLiveFaceCaptured) onLiveFaceCaptured(b64);
@@ -99,23 +107,23 @@ export default function BiometricComparisonCard({ docFaceCrop, liveFaceImage, bi
                 cx="18" cy="18" r="15.9" fill="none"
                 stroke={color} strokeWidth="3.2"
                 strokeLinecap="round"
-                strokeDasharray={`${pct} 100`}
+                strokeDasharray={`${hasScore ? pct : 0} 100`}
               />
             </svg>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 20, fontWeight: 800, fontFamily: '"JetBrains Mono", monospace', color, lineHeight: 1 }}>
-                {pct}%
+              <span style={{ fontSize: hasScore ? 20 : 16, fontWeight: 800, fontFamily: '"JetBrains Mono", monospace', color, lineHeight: 1 }}>
+                {hasScore ? `${pct}%` : '--%'}
               </span>
               <span style={{ fontSize: 9.5, color: '#B99DAA', fontWeight: 600, textTransform: 'uppercase' }}>
-                Match
+                {hasScore ? 'Match' : 'Awaiting'}
               </span>
             </div>
           </div>
 
           <div style={{
             marginTop: 8, fontSize: 11.5, fontWeight: 700, color,
-            background: isMatch ? '#F0F8F3' : isBorder ? '#FFF6EC' : '#FEF1F3',
-            border: `1.5px solid ${isMatch ? '#BCDCC7' : isBorder ? '#F8D6B0' : '#F8BAC7'}`,
+            background: !hasScore ? '#FBF9FA' : isMatch ? '#F0F8F3' : isBorder ? '#FFF6EC' : '#FEF1F3',
+            border: `1.5px solid ${!hasScore ? '#E9DFE4' : isMatch ? '#BCDCC7' : isBorder ? '#F8D6B0' : '#F8BAC7'}`,
             borderRadius: 999, padding: '3px 10px', display: 'inline-block',
           }}>
             {label}
@@ -127,15 +135,23 @@ export default function BiometricComparisonCard({ docFaceCrop, liveFaceImage, bi
           <div style={{ fontSize: 11, fontWeight: 700, color: '#846271', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
             Person at Checkpoint
           </div>
-          <div style={{
-            width: 90, height: 114, borderRadius: 14, overflow: 'hidden', margin: '0 auto',
-            background: '#FFF8FA', border: '1.5px solid #F3D0DC',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
+          <div 
+            onClick={() => setModal(true)}
+            style={{
+              width: 90, height: 114, borderRadius: 14, overflow: 'hidden', margin: '0 auto',
+              background: '#FFF8FA', 
+              border: liveFaceImage ? '1.5px solid #F3D0DC' : '1.5px dashed #D4789A',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', gap: 4, transition: 'all 0.2s ease'
+            }}
+          >
             {liveFaceImage ? (
               <img src={liveFaceImage} alt="Live traveler photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <Camera size={30} color="#F3D0DC" />
+              <>
+                <Camera size={26} color="#D4789A" />
+                <span style={{ fontSize: 9.5, color: '#D4789A', fontWeight: 700 }}>Click to Test</span>
+              </>
             )}
           </div>
         </div>
@@ -145,13 +161,29 @@ export default function BiometricComparisonCard({ docFaceCrop, liveFaceImage, bi
       {/* Liveness summary */}
       <div style={{
         padding: '10px 14px', borderRadius: 12,
-        background: '#FFF4F7', border: '1px solid #F5D2DC',
+        background: !hasScore ? '#FFF8FA' : (match?.is_live ? '#F0F8F3' : '#FEF1F3'),
+        border: `1.5px solid ${!hasScore ? '#F3D0DC' : (match?.is_live ? '#BCDCC7' : '#F8BAC7')}`,
         fontSize: 12, color: '#573B48', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
-        <span>Live Person Check: <strong>Real Human</strong> (no screen replay or mask)</span>
-        <span style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 700, color: '#4A8C5C' }}>
-          {match.liveness_score || 97}%
-        </span>
+        {!hasScore ? (
+          <>
+            <span>Live Person Check: <strong>Awaiting Traveler Camera</strong></span>
+            <button
+              className="btn btn-ghost"
+              style={{ fontSize: 11, padding: '3px 10px', height: 'auto', borderRadius: 8, color: '#D4789A', border: '1px solid #D4789A' }}
+              onClick={() => setModal(true)}
+            >
+              Start Live Camera Test →
+            </button>
+          </>
+        ) : (
+          <>
+            <span>Live Person Check: <strong>{match?.spoof_classification === 'REAL_HUMAN' ? 'Real Human (Verified)' : (match?.spoof_classification === 'SCREEN_REPLAY' ? 'Screen Replay Detected' : 'Printed Photo Detected')}</strong></span>
+            <span style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 700, color: match?.is_live ? '#4A8C5C' : '#D14966' }}>
+              {match?.liveness_score || 95}%
+            </span>
+          </>
+        )}
       </div>
 
       {modal && (

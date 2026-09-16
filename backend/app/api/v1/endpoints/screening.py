@@ -96,16 +96,7 @@ async def run_full_document_inspection(req: FullInspectionRequest, db: Session =
         if doc_face_crop is None:
             doc_face_crop = rectified_doc
 
-        biometric_results = {
-            "cosine_similarity": 0.88,
-            "similarity_percentage": 88.0,
-            "verdict": "MATCH",
-            "liveness_score": 92.0,
-            "is_live": True,
-            "spoof_classification": "REAL_HUMAN"
-        }
-
-        if req.live_face_base64:
+        if req.live_face_base64 and len(req.live_face_base64) > 100:
             live_face_img = base64_to_cv2(req.live_face_base64)
             if live_face_img is not None and live_face_img.size > 0:
                 live_face_crop, _ = extract_face_crop(live_face_img, is_document=False)
@@ -115,6 +106,7 @@ async def run_full_document_inspection(req: FullInspectionRequest, db: Session =
                 match_info = compare_faces(doc_face_crop, live_face_crop)
                 passive_live = compute_passive_liveness(live_face_crop)
                 biometric_results = {
+                    "has_live_capture": True,
                     "cosine_similarity": match_info["cosine_similarity"],
                     "similarity_percentage": match_info["similarity_percentage"],
                     "verdict": match_info["verdict"],
@@ -122,30 +114,45 @@ async def run_full_document_inspection(req: FullInspectionRequest, db: Session =
                     "is_live": passive_live["is_live"],
                     "spoof_classification": passive_live["spoof_classification"]
                 }
-                
-                # Check duplicate identity in vector store
-                doc_embedding = extract_face_embedding(doc_face_crop)
-                duplicate_hits = face_vector_store.search_duplicates(
-                    doc_embedding.tolist(), 
-                    threshold=0.85
-                )
-                # Filter out self
-                filtered_duplicates = [
-                    d for d in duplicate_hits 
-                    if d.get("document_number") != mrz_res.get("document_number")
-                ]
-                
-                # Index current identity
-                face_vector_store.add_identity(doc_embedding.tolist(), {
-                    "document_number": mrz_res.get("document_number"),
-                    "holder_name": mrz_res.get("full_name"),
-                    "scan_id": scan_id,
-                    "timestamp": time.time()
-                })
             else:
-                filtered_duplicates = []
+                biometric_results = {
+                    "has_live_capture": False,
+                    "cosine_similarity": None,
+                    "similarity_percentage": None,
+                    "verdict": "PENDING_CAPTURE",
+                    "liveness_score": None,
+                    "is_live": None,
+                    "spoof_classification": "NOT_CAPTURED"
+                }
         else:
-            filtered_duplicates = []
+            biometric_results = {
+                "has_live_capture": False,
+                "cosine_similarity": None,
+                "similarity_percentage": None,
+                "verdict": "PENDING_CAPTURE",
+                "liveness_score": None,
+                "is_live": None,
+                "spoof_classification": "NOT_CAPTURED"
+            }
+        # Check duplicate identity in vector store
+        doc_embedding = extract_face_embedding(doc_face_crop)
+        duplicate_hits = face_vector_store.search_duplicates(
+            doc_embedding.tolist(), 
+            threshold=0.85
+        )
+        # Filter out self
+        filtered_duplicates = [
+            d for d in duplicate_hits 
+            if d.get("document_number") != mrz_res.get("document_number")
+        ]
+        
+        # Index current identity
+        face_vector_store.add_identity(doc_embedding.tolist(), {
+            "document_number": mrz_res.get("document_number"),
+            "holder_name": mrz_res.get("full_name"),
+            "scan_id": scan_id,
+            "timestamp": time.time()
+        })
 
         # 6. Database & Blacklist Check
         doc_num = mrz_res.get("document_number", "UNKNOWN")
