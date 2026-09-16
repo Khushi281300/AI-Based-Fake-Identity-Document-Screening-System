@@ -18,7 +18,7 @@ const CHALLENGES = [
   { id: 'OPEN_MOUTH', title: 'Smile or slightly open mouth', icon: Smile, prompt: 'Show facial muscle variation' }
 ];
 
-export default function ActiveLivenessModal({ onClose, onComplete }) {
+export default function ActiveLivenessModal({ onClose, onComplete, onCapture }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -73,7 +73,9 @@ export default function ActiveLivenessModal({ onClose, onComplete }) {
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
       b64 = canvas.toDataURL("image/jpeg", 0.95);
     }
-    onComplete(b64);
+    if (onCapture) onCapture(b64);
+    if (onComplete) onComplete(b64);
+    if (onClose) onClose();
   };
 
   const currentChallenge = CHALLENGES[currentStepIndex];

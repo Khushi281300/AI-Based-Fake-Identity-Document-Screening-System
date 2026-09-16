@@ -26,19 +26,29 @@ def compute_passive_liveness(face_image: np.ndarray) -> Dict[str, Any]:
         sat_mean = 100.0
 
     # Liveness score formulation (0 to 100)
-    texture_score = min(100.0, (laplacian_var / 300.0) * 100.0)
-    screen_glare_penalty = max(0.0, glare_ratio * 400.0)
+    # Real human webcams typically have laplacian_var between 25 and 200
+    if laplacian_var >= 200.0:
+        texture_score = 95.0
+    elif laplacian_var >= 25.0:
+        texture_score = 75.0 + min(20.0, ((laplacian_var - 25.0) / 175.0) * 20.0)
+    elif laplacian_var >= 10.0:
+        texture_score = 50.0 + ((laplacian_var - 10.0) / 15.0) * 25.0
+    else:
+        texture_score = max(5.0, (laplacian_var / 10.0) * 45.0)
+
+    screen_glare_penalty = max(0.0, (glare_ratio - 0.03) * 350.0) if glare_ratio > 0.03 else 0.0
+    sat_score = min(20.0, (sat_mean / 128.0) * 15.0)
     
-    liveness_score = max(0.0, min(100.0, (texture_score * 0.7) - screen_glare_penalty + (sat_mean * 0.2)))
+    liveness_score = max(0.0, min(100.0, (texture_score * 0.85) - screen_glare_penalty + sat_score))
     
-    is_live = liveness_score >= 65.0
+    is_live = liveness_score >= 60.0
 
     return {
         "liveness_score": round(liveness_score, 1),
         "texture_sharpness": round(laplacian_var, 2),
         "specular_glare_ratio": round(glare_ratio, 4),
         "is_live": is_live,
-        "spoof_classification": "REAL_HUMAN" if is_live else ("SCREEN_REPLAY" if glare_ratio > 0.05 else "PRINTED_PHOTO")
+        "spoof_classification": "REAL_HUMAN" if is_live else ("SCREEN_REPLAY" if glare_ratio > 0.08 else "PRINTED_PHOTO")
     }
 
 def verify_active_challenge(

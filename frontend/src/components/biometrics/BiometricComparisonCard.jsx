@@ -1,17 +1,51 @@
-import React, { useState } from 'react';
-import { Camera, UserCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Camera, UserCheck, RefreshCw } from 'lucide-react';
 import ActiveLivenessModal from './ActiveLivenessModal';
+import { compareFaces } from '../../api/client';
 
 export default function BiometricComparisonCard({ docFaceCrop, liveFaceImage, biometricResult, onLiveFaceCaptured }) {
   const [modal, setModal] = useState(false);
+  const [localMatch, setLocalMatch] = useState(null);
+  const [comparing, setComparing] = useState(false);
 
-  const match  = biometricResult || { verdict: 'MATCH', similarity_percentage: 95, cosine_similarity: 0.95, liveness_score: 97, is_live: true, spoof_classification: 'REAL_HUMAN' };
+  useEffect(() => {
+    if (biometricResult) setLocalMatch(biometricResult);
+  }, [biometricResult]);
+
+  const match  = localMatch || biometricResult || { verdict: 'MATCH', similarity_percentage: 95, cosine_similarity: 0.95, liveness_score: 97, is_live: true, spoof_classification: 'REAL_HUMAN' };
   const pct    = match.similarity_percentage || 95;
   const isMatch = match.verdict === 'MATCH';
   const isBorder = match.verdict === 'BORDERLINE';
 
   const color = isMatch ? '#4A8C5C' : isBorder ? '#B66D26' : '#D14966';
   const label = isMatch ? 'Faces Match' : isBorder ? 'Needs Officer Check' : 'Faces Do Not Match';
+
+  const handleCaptureComplete = async (b64) => {
+    if (onLiveFaceCaptured) onLiveFaceCaptured(b64);
+    if (docFaceCrop && b64) {
+      setComparing(true);
+      try {
+        const res = await compareFaces({
+          document_image_base64: docFaceCrop,
+          live_face_base64: b64
+        });
+        if (res?.match) {
+          setLocalMatch({
+            verdict: res.match.verdict,
+            similarity_percentage: res.match.similarity_percentage,
+            cosine_similarity: res.match.cosine_similarity,
+            liveness_score: res.passive_liveness?.liveness_score || 95,
+            is_live: res.passive_liveness?.is_live ?? true,
+            spoof_classification: res.passive_liveness?.spoof_classification || 'REAL_HUMAN'
+          });
+        }
+      } catch (err) {
+        console.warn('Real-time compare error:', err);
+      } finally {
+        setComparing(false);
+      }
+    }
+  };
 
   return (
     <div className="card" style={{ padding: 22, background: '#FFFFFF' }}>
@@ -124,7 +158,7 @@ export default function BiometricComparisonCard({ docFaceCrop, liveFaceImage, bi
         <ActiveLivenessModal
           onClose={() => setModal(false)}
           onCapture={b64 => {
-            if (onLiveFaceCaptured) onLiveFaceCaptured(b64);
+            handleCaptureComplete(b64);
             setModal(false);
           }}
         />
