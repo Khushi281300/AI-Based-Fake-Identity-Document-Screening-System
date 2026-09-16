@@ -21,3 +21,16 @@ def test_risk_engine_rejected_blacklist():
     res = evaluate_screening_risk(quality, mrz, forensics, biometrics, database)
     assert res["outcome"] == "REJECTED"
     assert any("WATCHLIST" in f for f in res["critical_failures"])
+
+def test_risk_engine_pending_biometrics():
+    quality = {"quality_score": 92.0}
+    mrz = {"all_check_digits_valid": True}
+    forensics = {}
+    biometrics = {"has_live_capture": False}
+    database = {"is_blacklisted": False, "duplicate_identities": []}
+
+    res = evaluate_screening_risk(quality, mrz, forensics, biometrics, database)
+    assert res["outcome"] == "MANUAL_REVIEW"
+    assert res["factor_breakdown"]["biometric_verification"]["status"] == "PENDING"
+    assert any("pending" in w.lower() for w in res["warning_flags"])
+

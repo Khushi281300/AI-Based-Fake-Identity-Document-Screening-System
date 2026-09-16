@@ -37,7 +37,7 @@ export default function ExplainabilityChecklist({ factorBreakdown }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {CHECKS.map(item => {
           const factor = factors[item.key] || { score: 90, status: 'PASS' };
-          const isPending = factor.status === 'PENDING' || (item.key === 'biometric_verification' && (factor.status === 'WARN' || factor.score === 70 || factor.score === 0));
+          const isPending = factor.status === 'PENDING' || factor.status === 'NOT_CAPTURED' || (item.key === 'biometric_verification' && factor.status === 'PENDING');
           const ok = factor.status === 'PASS' || (!isPending && factor.score >= 75);
           const statusColor = isPending ? '#B66D26' : ok ? '#4A8C5C' : '#D14966';
           const statusText  = isPending ? 'Pending Camera' : ok ? 'Passed' : 'Failed';

@@ -61,6 +61,7 @@ def evaluate_screening_risk(
     # 4. Biometrics & Liveness Component (25%)
     has_live = biometric_results.get("has_live_capture", True)
     face_sim_val = biometric_results.get("cosine_similarity")
+    bio_pending = False
     if has_live and face_sim_val is not None:
         face_sim = float(face_sim_val)
         live_score = float(biometric_results.get("liveness_score", 95.0))
@@ -74,6 +75,7 @@ def evaluate_screening_risk(
             critical_failures.append("Live anti-spoofing check failed (printed photo or screen replay)")
     else:
         bio_score = 70.0
+        bio_pending = True
         warning_flags.append("Live facial verification pending: Traveler must complete live camera check")
 
     # 5. Database & Blacklist Component (20%)
@@ -121,7 +123,7 @@ def evaluate_screening_risk(
             "document_quality": {"score": round(q_score, 1), "weight": "10%", "status": "PASS" if q_score >= 70 else "WARN"},
             "mrz_integrity": {"score": round(mrz_score, 1), "weight": "20%", "status": "PASS" if mrz_all_valid else "FAIL"},
             "forensic_integrity": {"score": round(forensic_score, 1), "weight": "25%", "status": "PASS" if forensic_score >= 75 else "FAIL"},
-            "biometric_verification": {"score": round(bio_score, 1), "weight": "25%", "status": "PASS" if bio_score >= 75 else "FAIL"},
+            "biometric_verification": {"score": round(bio_score, 1), "weight": "25%", "status": "PENDING" if bio_pending else ("PASS" if bio_score >= 75 else "FAIL")},
             "database_watchlist": {"score": round(db_score, 1), "weight": "20%", "status": "PASS" if db_score >= 80 else "FAIL"}
         }
     }

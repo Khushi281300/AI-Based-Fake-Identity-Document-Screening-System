@@ -209,7 +209,7 @@ export default function App() {
           risk_evaluation: { outcome: 'REJECTED', overall_risk_score: 34, confidence_score: 97.5, recommendation: 'Document rejected. The expiry date appears to have been digitally altered.', critical_failures: ['Expiry date field shows signs of digital editing (ELA compression anomaly).'], warning_flags: [], factor_breakdown: { document_quality: { score: 90, status: 'PASS' }, mrz_integrity: { score: 100, status: 'PASS' }, forensic_integrity: { score: 32, status: 'FAIL' }, biometric_verification: { score: 92, status: 'PASS' }, database_watchlist: { score: 100, status: 'PASS' } } },
           document_fields: { format: 'TD3', full_name: 'ERIKSSON ANNA MARIA', document_number: 'L898902C3', expiry_date: '2038-12-31', all_check_digits_valid: true, raw_mrz: currentScenario.mrzLines },
           forensics_metrics: { ela: { is_spliced: true }, exif: { software_tag: 'Adobe Photoshop CC 2024' } },
-          biometrics: { verdict: 'MATCH', similarity_percentage: 92, cosine_similarity: 0.920, liveness_score: 96, spoof_classification: 'REAL_HUMAN' },
+          biometrics: { verdict: 'MATCH', similarity_percentage: 92, cosine_similarity: 0.920, liveness_score: 96, is_live: true, spoof_classification: 'REAL_HUMAN' },
           layers: { ela_heatmap_base64: documentImage }
         });
       } else if (id === 'fake_mrz_checksum') {
@@ -232,7 +232,7 @@ export default function App() {
           status: 'SUCCESS',
           risk_evaluation: { outcome: 'REJECTED', overall_risk_score: 35, confidence_score: 98.4, recommendation: 'Document rejected. The person at the checkpoint does not match the passport portrait.', critical_failures: ['Face does not match the passport photo (similarity: 41% — minimum required: 65%).'], warning_flags: [], factor_breakdown: { document_quality: { score: 92, status: 'PASS' }, mrz_integrity: { score: 100, status: 'PASS' }, forensic_integrity: { score: 95, status: 'PASS' }, biometric_verification: { score: 41, status: 'FAIL' }, database_watchlist: { score: 100, status: 'PASS' } } },
           document_fields: { format: 'TD3', full_name: 'ZHAO WEI', document_number: 'E44332211', all_check_digits_valid: true, raw_mrz: currentScenario.mrzLines },
-          biometrics: { verdict: 'MISMATCH', similarity_percentage: 41.2, cosine_similarity: 0.412, liveness_score: 94, spoof_classification: 'REAL_HUMAN' },
+          biometrics: { verdict: 'MISMATCH', similarity_percentage: 41.2, cosine_similarity: 0.412, liveness_score: 94, is_live: true, spoof_classification: 'REAL_HUMAN' },
           layers: { ela_heatmap_base64: documentImage }
         });
       } else if (id === 'blacklisted_identity' || watchlistHit) {
@@ -263,17 +263,19 @@ export default function App() {
         setResult({
           status: 'SUCCESS',
           risk_evaluation: {
-            outcome: 'VERIFIED',
-            overall_risk_score: 96.5,
+            outcome: liveFaceImage ? 'VERIFIED' : 'MANUAL_REVIEW',
+            overall_risk_score: liveFaceImage ? 96.5 : 88.0,
             confidence_score: 98.8,
-            recommendation: 'Document authenticated. All forensic, biometric, and Interpol checks cleared. Entry authorized.',
+            recommendation: liveFaceImage
+              ? 'Document authenticated. All forensic, biometric, and Interpol checks cleared. Entry authorized.'
+              : 'Physical document authenticated. Live biometric verification pending camera check.',
             critical_failures: [],
-            warning_flags: [],
+            warning_flags: liveFaceImage ? [] : ['Live facial verification pending: Traveler must complete live camera check'],
             factor_breakdown: {
               document_quality: { score: 94, status: 'PASS' },
               mrz_integrity: { score: 100, status: 'PASS' },
               forensic_integrity: { score: 96, status: 'PASS' },
-              biometric_verification: { score: 95, status: 'PASS' },
+              biometric_verification: liveFaceImage ? { score: 95, status: 'PASS' } : { score: 70, status: 'PENDING' },
               database_watchlist: { score: 100, status: 'PASS' }
             }
           },
@@ -289,12 +291,20 @@ export default function App() {
             all_check_digits_valid: true,
             raw_mrz: mrzLinesToSend
           },
-          biometrics: {
+          biometrics: liveFaceImage ? {
             verdict: 'MATCH',
             similarity_percentage: 94.8,
             cosine_similarity: 0.948,
             liveness_score: 97,
+            is_live: true,
             spoof_classification: 'REAL_HUMAN'
+          } : {
+            verdict: 'PENDING_CAPTURE',
+            similarity_percentage: null,
+            cosine_similarity: null,
+            liveness_score: null,
+            is_live: null,
+            spoof_classification: 'NOT_CAPTURED'
           },
           layers: {
             original_rectified_base64: documentImage,
