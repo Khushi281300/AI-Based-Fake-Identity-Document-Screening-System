@@ -47,20 +47,31 @@ export default function ActiveLivenessModal({ onClose, onComplete, onCapture }) 
   }, []);
 
   const handleSimulateStep = () => {
+    if (isVerifying) return;
     setIsVerifying(true);
+
+    // Step 1: Eye blink
+    setProgress(20);
     setTimeout(() => {
-      setIsVerifying(false);
-      if (currentStepIndex + 1 < CHALLENGES.length) {
-        setCurrentStepIndex(prev => prev + 1);
-        setProgress((prev) => prev + 33);
-      } else {
-        setProgress(100);
-        setIsSuccess(true);
-        try {
-          confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
-        } catch (e) {}
-      }
-    }, 1200);
+      setProgress(40);
+      setCurrentStepIndex(1); // Turn head
+
+      setTimeout(() => {
+        setProgress(70);
+        setCurrentStepIndex(2); // Smile / muscle variation
+
+        setTimeout(() => {
+          setIsVerifying(false);
+          setProgress(100);
+          setIsSuccess(true);
+          try {
+            confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+          } catch (e) {}
+        }, 1200);
+
+      }, 1300);
+
+    }, 1300);
   };
 
   const handleCaptureAndFinalize = () => {
