@@ -29,12 +29,20 @@ export default function ActiveLivenessModal({ onClose, onComplete, onCapture }) 
     let stream = null;
     const initCamera = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+          });
+        } catch (err1) {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        }
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
         }
       } catch (err) {
-        console.warn("Webcam fallback for liveness modal", err);
+        console.warn("Mobile webcam fallback for liveness modal", err);
       }
     };
     initCamera();
@@ -74,19 +82,37 @@ export default function ActiveLivenessModal({ onClose, onComplete, onCapture }) 
     }, 1300);
   };
 
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const b64 = ev.target?.result;
+      if (onCapture) onCapture(b64);
+      if (onComplete) onComplete(b64);
+      if (onClose) onClose();
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleCaptureAndFinalize = () => {
     let b64 = null;
-    if (videoRef.current) {
+    if (videoRef.current && videoRef.current.videoWidth > 0) {
       const canvas = document.createElement("canvas");
       canvas.width = videoRef.current.videoWidth || 320;
       canvas.height = videoRef.current.videoHeight || 320;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
       b64 = canvas.toDataURL("image/jpeg", 0.95);
+      if (onCapture) onCapture(b64);
+      if (onComplete) onComplete(b64);
+      if (onClose) onClose();
+    } else {
+      // Direct mobile device camera snapshot fallback
+      fileInputRef.current?.click();
     }
-    if (onCapture) onCapture(b64);
-    if (onComplete) onComplete(b64);
-    if (onClose) onClose();
   };
 
   const currentChallenge = CHALLENGES[currentStepIndex];
@@ -186,6 +212,14 @@ export default function ActiveLivenessModal({ onClose, onComplete, onCapture }) 
               Perform Challenge Step
             </button>
           )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="user"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
         </div>
       </div>
     </div>

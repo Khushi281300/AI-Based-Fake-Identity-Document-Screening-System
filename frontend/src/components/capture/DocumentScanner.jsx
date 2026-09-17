@@ -56,14 +56,39 @@ export default function DocumentScanner({
     reader.readAsDataURL(file);
   };
 
-  const startCamera = (target = 'doc') => {
+  const startCamera = async (target = 'doc') => {
     setCameraTarget(target);
     setCameraActive(true);
-    navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'environment' } })
-      .then(stream => {
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      })
-      .catch(() => {});
+    const facing = target === 'selfie' ? 'user' : 'environment';
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera not supported in this browser environment');
+      }
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+      } catch (e) {
+        // Fallback to basic video constraint if ideal resolution fails
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facing }
+        });
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => {});
+      }
+    } catch (err) {
+      console.warn('Direct camera access unavailable, using native file picker:', err);
+      // Automatically fallback to device native camera file picker
+      if (target === 'selfie') {
+        selfieFileRef.current?.click();
+      } else {
+        fileInputRef.current?.click();
+      }
+      setCameraActive(false);
+    }
   };
 
   const captureCamera = () => {
@@ -214,7 +239,7 @@ export default function DocumentScanner({
 
             {cameraActive ? (
               <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
-                <video ref={videoRef} autoPlay playsInline style={{ maxHeight: 240, maxWidth: '100%', borderRadius: 14 }} />
+                <video ref={videoRef} autoPlay playsInline muted style={{ maxHeight: 240, maxWidth: '100%', borderRadius: 14 }} />
                 <button
                   onClick={captureCamera}
                   style={{
