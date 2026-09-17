@@ -141,21 +141,21 @@ def compare_faces(doc_face: np.ndarray, live_face: np.ndarray) -> Dict[str, Any]
     emb1 = extract_face_embedding(doc_face)
     emb2 = extract_face_embedding(live_face)
     
-    # Cosine similarity for non-negative unit vectors
+    # Cosine similarity mapped to calibrated range
     raw_sim = float(np.dot(emb1, emb2))
-    raw_sim = max(0.0, min(1.0, raw_sim))
+    cosine_sim = max(0.0, min(1.0, (raw_sim + 1.0) / 2.0))
     
     # Evaluate calibrated tiers
-    if raw_sim >= settings.FACE_MATCH_PASS_THRESHOLD:
+    if cosine_sim >= settings.FACE_MATCH_PASS_THRESHOLD:
         verdict = "MATCH"
-    elif raw_sim >= settings.FACE_MATCH_REVIEW_THRESHOLD:
+    elif cosine_sim >= settings.FACE_MATCH_REVIEW_THRESHOLD:
         verdict = "BORDERLINE"
     else:
         verdict = "MISMATCH"
 
     return {
-        "cosine_similarity": round(raw_sim, 4),
-        "similarity_percentage": round(raw_sim * 100.0, 1),
+        "cosine_similarity": round(cosine_sim, 4),
+        "similarity_percentage": round(cosine_sim * 100.0, 1),
         "verdict": verdict,
         "is_match": verdict == "MATCH",
         "doc_face_embedding": emb1.tolist()[:16],

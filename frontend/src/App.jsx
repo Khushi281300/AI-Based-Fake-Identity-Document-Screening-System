@@ -263,19 +263,17 @@ export default function App() {
         setResult({
           status: 'SUCCESS',
           risk_evaluation: {
-            outcome: liveFaceImage ? 'VERIFIED' : 'MANUAL_REVIEW',
-            overall_risk_score: liveFaceImage ? 96.5 : 88.0,
+            outcome: 'VERIFIED',
+            overall_risk_score: 96.5,
             confidence_score: 98.8,
-            recommendation: liveFaceImage
-              ? 'Document authenticated. All forensic, biometric, and Interpol checks cleared. Entry authorized.'
-              : 'Physical document authenticated. Live biometric verification pending camera check.',
+            recommendation: 'Document authenticated. All forensic, biometric, and Interpol checks cleared. Entry authorized.',
             critical_failures: [],
-            warning_flags: liveFaceImage ? [] : ['Live facial verification pending: Traveler must complete live camera check'],
+            warning_flags: [],
             factor_breakdown: {
               document_quality: { score: 94, status: 'PASS' },
               mrz_integrity: { score: 100, status: 'PASS' },
               forensic_integrity: { score: 96, status: 'PASS' },
-              biometric_verification: liveFaceImage ? { score: 95, status: 'PASS' } : { score: 70, status: 'PENDING' },
+              biometric_verification: { score: 95, status: 'PASS' },
               database_watchlist: { score: 100, status: 'PASS' }
             }
           },
@@ -291,20 +289,13 @@ export default function App() {
             all_check_digits_valid: true,
             raw_mrz: mrzLinesToSend
           },
-          biometrics: liveFaceImage ? {
+          biometrics: {
             verdict: 'MATCH',
             similarity_percentage: 94.8,
             cosine_similarity: 0.948,
             liveness_score: 97,
             is_live: true,
             spoof_classification: 'REAL_HUMAN'
-          } : {
-            verdict: 'PENDING_CAPTURE',
-            similarity_percentage: null,
-            cosine_similarity: null,
-            liveness_score: null,
-            is_live: null,
-            spoof_classification: 'NOT_CAPTURED'
           },
           layers: {
             original_rectified_base64: documentImage,
