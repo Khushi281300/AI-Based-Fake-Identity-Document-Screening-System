@@ -1,13 +1,34 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+export const getBackendUrl = () => {
+  if (typeof window !== 'undefined') {
+    const custom = localStorage.getItem('AEGIS_BACKEND_URL');
+    if (custom && custom.trim()) return custom.trim().replace(/\/+$/, '');
+  }
+  return import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+};
+
+export const setBackendUrl = (url) => {
+  if (typeof window !== 'undefined') {
+    if (url && url.trim()) {
+      localStorage.setItem('AEGIS_BACKEND_URL', url.trim().replace(/\/+$/, ''));
+    } else {
+      localStorage.removeItem('AEGIS_BACKEND_URL');
+    }
+  }
+};
 
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getBackendUrl(),
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+apiClient.interceptors.request.use((config) => {
+  config.baseURL = getBackendUrl();
+  return config;
 });
 
 export const checkHealth = async () => {
